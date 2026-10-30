@@ -1,0 +1,4 @@
+*.hi
+*.o
+/alex_examples
+/ParserV1
