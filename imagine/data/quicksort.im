@@ -1,0 +1,44 @@
+subprogram quicksort{list<int> lista} (
+
+  if {lista.size() <= 1} (
+    return;
+  ) endif;
+
+  q <- lista[0];
+
+  list<int> smaller = [i -> lista| i <= q];
+  list<int> larger = [i -> lista| i > q];
+  smaller.remove(q);
+
+  quicksort(smaller);
+  quicksort(larger);
+
+  lista <- smaller+q+larger;
+)
+
+// pode ser tipo read() ou analogo tipo input() 
+// echo() print() puts() 
+
+function main (
+
+  out{"Digite os valores do array a ser ordenado};
+  list <int> input = in{4 12 3 5 1 0};
+  quicksort{input};
+  out{input};
+
+)
+
+Q4.1: 
+
+- Incompleta ("mostre um programa completo que leia dados digitados pelo usuário) | OK! 
+invoque o subprograma anterior e exiba seus resultados em tela").                 | OK! 
+
+ 
+
+Q4.2:
+
+- Crie programa completo (ver correção do item 4.1)   | OK! 
+- atualize a gramática
+- Separe as preocupações léxicas das sintáticas.
+- Como derivar o "until"?
+
