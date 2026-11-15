@@ -41,38 +41,41 @@ $underscore = \_
 -- int | float | bool | u8 | complex . . . { \p s -> Token p (Type s)}
 
 tokens :-
-    -- palavras reservadas e afins
+-- palavras reservadas e afins
     $white+                                ;
-    "--".*                                 ;
-    
-    int                                    { \p s -> Token p KW_INT}
-    bool                                   { \p s -> Token p KW_BOOL}
-    float                                  { \p s -> Token p KW_FLOAT}
-    string                                 { \p s -> Token p KW_STRING}
-    u8                                     { \p s -> Token p KW_U8}
-    complex                                { \p s -> Token p KW_COMPLEX}
-    struct ?                               { \p s -> Token p KW_STRUCT}
-    kernel                                 { \p s -> Token p KW_KERNEL}
-    image                                  { \p s -> Token p KW_IMAGE}
-    signal                                 { \p s -> Token p KW_SIGNAL}
-    procedure                              { \p s -> Token p KW_PROCEDURE}
-    function                               { \p s -> Token p KW_FUNCTION}
-    main                                   { \p s -> Token p KW_MAIN}
-    return                                 { \p s -> Token p KW_RETURN}
-    if                                     { \p s -> Token p KW_IF}
-    endif                                  { \p s -> Token p KW_ENDIF}
-    else                                   { \p s -> Token p KW_ELSE}
-    until                                  { \p s -> Token p KW_UNTIL}
-    perform                                { \p s -> Token p KW_PERFORM}    
-    for                                    { \p s -> Token p KW_FOR}
-    type                                   { \p s -> Token p KW_TYPE}    
-    enum                                   { \p s -> Token p KW_ENUM}
-      
-
-    -- operadores  
-    "<-"                                      { \p s -> Token p OP_ASSIGN} 
-    "->"                                      { \p s -> Token p OP_ITERATOR} 
-    "|"                                       { \p s -> Token p OP_COMPREHENSION} 
+    "--".*                                 ;    
+--tipos definiçoes etc
+    int                                    {\p s -> Token p KW_INT}
+    bool                                   {\p s -> Token p KW_BOOL}
+    float                                  {\p s -> Token p KW_FLOAT}
+    string                                 {\p s -> Token p KW_STRING}
+    u8                                     {\p s -> Token p KW_U8}
+    complex                                {\p s -> Token p KW_COMPLEX}
+    kernel                                 {\p s -> Token p KW_KERNEL}
+    image                                  {\p s -> Token p KW_IMAGE}
+    signal                                 {\p s -> Token p KW_SIGNAL}
+    type                                   {\p s -> Token p KW_TYPE}    
+    enum                                   {\p s -> Token p KW_ENUM}
+    struct                                 {\p s -> Token p KW_STRUCT}
+    list                                   {\p s -> Token p KW_LIST}
+    true                                   {\p s -> Token p KW_TRUE}
+    false                                  {\p s -> Token p KW_FALSE}
+--subprogramas
+    procedure                              {\p s -> Token p KW_PROCEDURE}
+    function                               {\p s -> Token p KW_FUNCTION}
+    main                                   {\p s -> Token p KW_MAIN}
+    return                                 {\p s -> Token p KW_RETURN}
+--controle
+    if                                     {\p s -> Token p KW_IF}
+    endif                                  {\p s -> Token p KW_ENDIF}
+    else                                   {\p s -> Token p KW_ELSE}
+    until                                  {\p s -> Token p KW_UNTIL}
+    perform                                {\p s -> Token p KW_PERFORM}    
+    for                                    {\p s -> Token p KW_FOR}
+--operadores  
+    "<-"                                      {\p s -> Token p OP_ASSIGN} 
+    "->"                                      {\p s -> Token p OP_ITERATOR} 
+    "|"                                       {\p s -> Token p OP_COMPREHENSION} 
     "+"                                       {\p s -> Token p OP_PLUS}
     "-"                                       {\p s -> Token p OP_MINUS}
     "*"                                       {\p s -> Token p OP_ASTERISK}
@@ -85,25 +88,23 @@ tokens :-
     "<="                                      {\p s -> Token p OP_LEQ}
     "&&"                                      {\p s -> Token p OP_AND}
     "||"                                      {\p s -> Token p OP_OR}
-    "!"                                       {\p s -> Token p OP_NOT}
-    
-    -- pontuacao
-    -- "(" 
-    -- ")"
-    -- "{"
-    -- "}"
-    -- <<
-    -- >>
-    -- ;
-    -- :
-    -- .
-
-
-
-
-
-    $alpha [alphanum $underscore]*          {\s -> Id s }
-    \" [$printable]* \"                     {\s -> String s }
+    "!"                                       {\p s -> Token p OP_NOT}    
+--pontuacao
+    "("                                        {\p s -> Token p PUNC_LPAREN}
+    ")"                                        {\p s -> Token p PUNC_RPAREN}
+    "{"                                        {\p s -> Token p PUNC_LBRACE}
+    "}"                                        {\p s -> Token p PUNC_RBRACE}
+    "["                                        {\p s -> Token p PUNC_LBRACKET}
+    "]"                                        {\p s -> Token p PUNC_RBRACKET}
+    ";"                                        {\p s -> Token p PUNC_SEMICOLON}
+    ":"                                        {\p s -> Token p PUNC_COLON}
+    ","                                        {\p s -> Token p PUNC_COMMA}
+    "."                                        {\p s -> Token p PUNC_DOT}
+--ids literais etc?
+    $alpha [$alphanum $underscore]*         {\p s -> Token p (Id s)}
+    $digit+                                 {\p s -> Token p (Int (read s))}
+    $digit+ "." $digit+                     {\p s -> Token p (Float (read s))}
+    \" [$printable]* \"                     {\p s -> Token p (String s)}
 
 
 {
@@ -112,12 +113,42 @@ data Token =
     deriving (Eq,Show)
 
 data TokenClass =
+--tipos defs etc
+  KW_INT |
+  KW_BOOL |
+  KW_FLOAT |
+  KW_STRING |
+  KW_U8 |
+  KW_COMPLEX |
+  KW_KERNEL |
+  KW_IMAGE |
+  KW_SIGNAL |
+  KW_LIST |
+  KW_TYPE |
+  KW_STRUCT |
+  KW_ENUM |
+  KW_TRUE |
+  KW_FALSE |
+--subprogs
+  KW_PROCEDURE |
+  KW_FUNCTION |
+  KW_MAIN |
+  KW_RETURN |
+--controle
+  KW_IF |
+  KW_ENDIF |
+  KW_ELSE |
+  KW_UNTIL |
+  KW_PERFORM |    
+  KW_FOR |
+--operadores
   OP_ASSIGN |
+  OP_ITERATOR |
+  OP_COMPREHENSION | 
   OP_PLUS |
   OP_MINUS |
   OP_ASTERISK |
   OP_SLASH |
-  OP_BACKSLASH |
   OP_EQ |
   OP_NEQ |
   OP_GREATER |
@@ -127,35 +158,27 @@ data TokenClass =
   OP_AND |
   OP_OR |
   OP_NOT |
-  KW_INT |
-  KW_BOOL |
-  KW_FLOAT |
-  KW_STRING |
-  KW_U8 |
-  KW_COMPLEX |
-  KW_STRUCT |
-  KW_KERNEL |
-  KW_IMAGE |
-  KW_SIGNAL |
-  KW_PROCEDURE |
-  KW_FUNCTION |
-  KW_MAIN |
-  KW_RETURN |
-  KW_IF |
-  KW_ENDIF |
-  KW_ELSE |
-  KW_UNTIL |
-  KW_PERFORM |    
-  KW_FOR |
-  KW_TYPE |    
-  KW_ENUM |
+--pontuacao
+  PUNC_LPAREN | 
+  PUNC_RPAREN |
+  PUNC_LBRACE |
+  PUNC_RBRACE |
+  PUNC_LBRACKET |
+  PUNC_RBRACKET |
+  PUNC_SEMICOLON |
+  PUNC_COLON |
+  PUNC_COMMA |
+  PUNC_DOT |
+-- ids literais ...?
   Type String |
   Id String |
   Int Int |
+  Float Double |
   String String
   deriving (Eq,Show)
 
-  
+
+
 getTokens fn = do
                   fh <- openFile fn ReadMode;
                   s <- hGetContents fh;
