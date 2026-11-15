@@ -41,6 +41,7 @@ $underscore = \_
 -- int | float | bool | u8 | complex . . . { \p s -> Token p (Type s)}
 
 tokens :-
+    program                                { \p s -> Token p KW_PROGRAM}
 -- palavras reservadas e afins
     $white+                                ;
     "--".*                                 ;    
@@ -113,6 +114,7 @@ data Token =
     deriving (Eq,Show)
 
 data TokenClass =
+  KW_PROGRAM |
 --tipos defs etc
   KW_INT |
   KW_BOOL |
