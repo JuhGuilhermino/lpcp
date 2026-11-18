@@ -1,0 +1,5 @@
+COMENTARIO: Uma árvore binária de busca generaliza a ideia de listas encadeadas crescentes. Em uma árvore binária de busca, os nós têm um campo chave de um tipo ordenável e apresentam as seguintes propriedades: para qualquer nó n, a chave de n é maior ou igual à chave de qualquer nó na subárvore esquerda de n e menor ou igual à chave de qualquer nó na subárvore direita de n. Implemente uma árvore binária de busca com chaves de tipo inteiro e as seguintes operações:
+COMENTARIO: A) Transforme uma sequência de valores em uma árvore binária de busca.
+COMENTARIO: B) Encontre a chave mínima da árvore, indicando seu nível.
+COMENTARIO: C) Encontre a chave máxima da árvore, indicando seu nível.
+COMENTARIO: D) Imprima a árvore de busca na saída padrão, nível a nível.

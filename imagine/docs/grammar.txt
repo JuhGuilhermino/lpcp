@@ -1,0 +1,181 @@
+DefProgram → DefSub DefMain
+
+
+DefMain    → 'main' Id '{' '}' '(' Stmts ')'
+
+
+
+DefSub     → 'procedure' DefProc DefSub | 'function' DefFunc DefSub | ε
+
+DefFunc    → Type Id '{' Params '}' '(' Stmts 'return' Expr ';' ')'
+
+DefProc    → Id '{' Params '}' '(' Stmts ')'
+
+
+
+
+Params     → Type Id Params'
+
+Params'    → ',' Args | ε
+
+// Mudar para primitive type?
+
+Type       → 'int' | 'bool' | 'float' | 'string' | 'u8' | 'complex' | 'kernel' | 'image' | 'signal' 
+
+// Ta certo isso?
+// Ajustando ainda
+// Para tipos estruturados
+StructType →  'matrix' | 'list' | 'array' | 'associativematrix ' | 'register'
+
+Stmts      → St ';' Stmts'
+                                                  
+Stmts'     → Stmts | ε  
+
+St         → Cond | Attr | Decl | Call | Return
+
+Cond       → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'    // O resto continua como ta 
+
+ElseStmt   → 'else' ElseStmt' | ε 
+
+ElseStmt'  → 'if' '{' Expr '}' '(' Stmts ')' | '(' Stmts ')'
+
+Attr       → Var '<-' Expr   // Id '<-' Expr
+
+Decl       → Type Id    // Type Var Decl'
+
+Decl'      → '<-' Expr | ε 
+
+Var        →     Id Var' 
+
+Var'       →     '[' Expr ']' | ε   
+
+I
+
+
+
+
+//  Var '<-' Expr 
+
+//Var '<-' Expr 
+// Type Id ForComprehension |
+int a <- 2 -> estrutura
+
+--for {atribuição , condição , step} ()
+
+
+ForStmt    → 'for' '{' Init ',' Cond ',' Expr '}' '(' Stmts ')'
+
+
+
+
+Type Id <-
+Id -> estrutura
+Id <- 10; comp; step;
+
+
+                                                        // tirar essa duvida com umberto
+ForStmt'    → Init ',' Cond ',' Expr '}' '(' Stmts ')' | Id '->' DataStruct '}'
+
+ListStmt
+
+
+
+Init       → Type Id  | Var '<-' Expr
+
+
+Stmt        → CondStmt
+            | WhileStmt
+            | ForStmt
+            | 
+
+CondStmt    → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'
+
+ElseStmt   → 'else' ElseStmt' | ε
+
+ElseStmt'  → 'if' '{' Expr '}' '(' Stmts ')' | '(' Stmts ')'
+
+WhileStmt   → 'until' '{' Expr '}' 'perform' '{' Stmt '}'
+
+ForStmt     → 'for' '{' ForStmt'
+
+ForStmt'   → Id ForDistinguish | Decl ForRegular
+
+ForDistinguish → '->' DataStructure '}' '(' Stmts ')' | Var' Decl' ForRegular
+
+ForRegular →',' Cond ',' Expr '}' '(' Stmts ')'
+
+Call       → Id '(' ListExpr ')' | Var '.' Id '(' ListExpr ')'      
+
+Return          → 'return' Return'
+
+Return'    → Expr | ε  
+
+
+
+
+
+Var        →     Id Var'
+
+Var'       →     '[' Expr ']' | ε   
+
+                                               
+Expr       → ExprOr | '[' ListComprehension ']'
+
+ExprOr     → ExprAnd ExprOr'
+
+ExprOr'    → '||' ExprAnd ExprOr' | ε
+
+ExprAnd    → ExprNot ExprAnd'
+
+ExprAnd'   → '&&' ExprNot ExprAnd' | ε
+
+ExprNot    → '!' ExprNot | ExprRel
+
+ExprRel    → ExprAdd ExprRel'
+
+ExprRel'   → Op ExprAdd | ε
+
+ExprAdd    → ExprMul ExprAdd'
+
+ExprAdd'   → '+' ExprMul ExprAdd' | '-' ExprMul ExprAdd' | ε
+
+ExprMul    → ExprPrim ExprMul'
+
+ExprMul'   → '*' ExprPrim ExprMul' | '/' ExprPrim ExprMul' | ε
+
+ExprPrim   → '(' Expr ')' | Compr | Id ExprPrim' | Number | 'true' | 'false'
+
+ExprPrim'  → '[' Expr ']' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε
+
+Compr      → '[' Id '->' Id '|' Expr ']'
+
+ListExpr   → Expr ListExpr' | ε
+
+ListExpr'  → ',' ListExpr | ε
+
+ListComprehension  → declaracao | ExpBool
+
+
+// [i -> lista| i > q];
+
+
+
+Op         → '<=' | '>=' | '<' | '>' | '==' | '!='   
+                                                     
+
+
+
+                              
+Id      →     Char Id'
+
+Id'     →     Word | ε 
+
+Word       → Char Word | Number Word | Char | Number            // Word    →   Char Word' | Number Word'
+                                                                // Word'   →   Word | ε
+                                                                
+Char       → 'a' | ... | 'z' | 'A' | ... | 'Z'                 
+
+Number     → '0' | ... | '9'                                    
+                                                  
+# corrigir expressoes p/ tirar relacionais de aritmeticas
+# fazer list comprehension
