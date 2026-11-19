@@ -1,1 +1,9 @@
 COMENTARIO: le x, y (decimais) e c (int) e retorna x^2-y+c
+
+main{} (
+
+    float x <- 2.0; 
+    float y <- 1.5;
+    int c <- 1;
+    puts{x*x - y + c};
+)
