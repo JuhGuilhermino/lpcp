@@ -1,181 +1,80 @@
-DefProgram → DefSub DefMain
+DefProgram     → DefSub DefMain
 
+DefMain        → 'main' '{' '}' '(' Stmts ')'
 
-DefMain    → 'main' Id '{' '}' '(' Stmts ')'
+DefSub         → 'procedure' DefProc DefSub | 'function' DefFunc DefSub | ε
 
+DefFunc        → Type Id '{' Params '}' '(' Stmts 'return' Expr ';' ')'
 
+DefProc        → Id '{' Params '}' '(' Stmts ')'
 
-DefSub     → 'procedure' DefProc DefSub | 'function' DefFunc DefSub | ε
 
-DefFunc    → Type Id '{' Params '}' '(' Stmts 'return' Expr ';' ')'
+Params         → Type Id Params' | ε
+Params'        → ',' Type Id Params' | ε
 
-DefProc    → Id '{' Params '}' '(' Stmts ')'
 
+Type           → PrimType | StructType
+PrimType       → 'int' | 'bool' | 'float' | 'string' | 'u8' | 'complex' | 'kernel' | 'image' | 'signal'
+StructType     → 'list' '<' Type '>'
 
 
+Stmts          → St ';' Stmts | ε
 
-Params     → Type Id Params'
+St             → CondStmt | WhileStmt | ForStmt | DeclStmt | Id StTail | PrintStmt
 
-Params'    → ',' Args | ε
+StTail         → AttrStmt | '[' Expr ']' StTail' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε
+StTail'        → AttrStmt | '.' Id '(' ListExpr ')'
 
-// Mudar para primitive type?
+CondStmt       → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'
 
-Type       → 'int' | 'bool' | 'float' | 'string' | 'u8' | 'complex' | 'kernel' | 'image' | 'signal' 
+ElseStmt       → 'else' ElseStmt' | ε
+ElseStmt'      → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt | '(' Stmts ')'
 
-// Ta certo isso?
-// Ajustando ainda
-// Para tipos estruturados
-StructType →  'matrix' | 'list' | 'array' | 'associativematrix ' | 'register'
+PrintStmt      → 'puts' '(' Expr ')'
 
-Stmts      → St ';' Stmts'
-                                                  
-Stmts'     → Stmts | ε  
+WhileStmt      → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
 
-St         → Cond | Attr | Decl | Call | Return
+ForStmt        → 'for' '{' ForStmt'
+ForStmt'       → Id ForDistinguish | DeclStmt ForRegular
 
-Cond       → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'    // O resto continua como ta 
+ForDistinguish → '->' Expr '}' '(' Stmts ')' | Var DeclStmt' ForRegular
 
-ElseStmt   → 'else' ElseStmt' | ε 
+ForRegular     → ',' Expr ',' Var AttrStmt '}' '(' Stmts ')'
 
-ElseStmt'  → 'if' '{' Expr '}' '(' Stmts ')' | '(' Stmts ')'
+AttrStmt       → '<-' Expr
 
-Attr       → Var '<-' Expr   // Id '<-' Expr
+DeclStmt       → Type Id DeclStmt'
+DeclStmt'      → AttrStmt | ε
 
-Decl       → Type Id    // Type Var Decl'
+Var            → Id Var'
+Var'           → '[' Expr ']' | ε
 
-Decl'      → '<-' Expr | ε 
 
-Var        →     Id Var' 
+Expr           → ExprOr
 
-Var'       →     '[' Expr ']' | ε   
+ExprOr         → ExprAnd ExprOr' | ε
+ExprOr'        → '||' ExprAnd ExprOr' | ε
 
-I
+ExprAnd        → ExprNot ExprAnd'
+ExprAnd'       → '&&' ExprNot ExprAnd' | ε
 
+ExprNot        → '!' ExprNot | ExprRel
 
+ExprRel        → ExprAdd ExprRel'
+ExprRel'       → Op ExprAdd | ε
 
+ExprAdd        → ExprMul ExprAdd'
+ExprAdd'       → '+' ExprMul ExprAdd' | '-' ExprMul ExprAdd' | ε
 
-//  Var '<-' Expr 
+ExprMul        → ExprPrim ExprMul'
+ExprMul'       → '*' ExprPrim ExprMul' | '/' ExprPrim ExprMul' | ε
 
-//Var '<-' Expr 
-// Type Id ForComprehension |
-int a <- 2 -> estrutura
+ExprPrim       → '(' Expr ')' | '[' ListTail | Id ExprPrim' | 'true' | 'false' | Int | Float | String
+ExprPrim'      → '[' Expr ']' | '(' ListExpr ')' ExprPrim' | '.' Id ExprPrim' | ε
 
---for {atribuição , condição , step} ()
+ListExpr       → Expr ListExpr' | ε
+ListExpr'      → ',' ListExpr | ε
 
+ListTail       → Id '->' Expr '|' Expr ']' | ListExpr ']'
 
-ForStmt    → 'for' '{' Init ',' Cond ',' Expr '}' '(' Stmts ')'
-
-
-
-
-Type Id <-
-Id -> estrutura
-Id <- 10; comp; step;
-
-
-                                                        // tirar essa duvida com umberto
-ForStmt'    → Init ',' Cond ',' Expr '}' '(' Stmts ')' | Id '->' DataStruct '}'
-
-ListStmt
-
-
-
-Init       → Type Id  | Var '<-' Expr
-
-
-Stmt        → CondStmt
-            | WhileStmt
-            | ForStmt
-            | 
-
-CondStmt    → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'
-
-ElseStmt   → 'else' ElseStmt' | ε
-
-ElseStmt'  → 'if' '{' Expr '}' '(' Stmts ')' | '(' Stmts ')'
-
-WhileStmt   → 'until' '{' Expr '}' 'perform' '{' Stmt '}'
-
-ForStmt     → 'for' '{' ForStmt'
-
-ForStmt'   → Id ForDistinguish | Decl ForRegular
-
-ForDistinguish → '->' DataStructure '}' '(' Stmts ')' | Var' Decl' ForRegular
-
-ForRegular →',' Cond ',' Expr '}' '(' Stmts ')'
-
-Call       → Id '(' ListExpr ')' | Var '.' Id '(' ListExpr ')'      
-
-Return          → 'return' Return'
-
-Return'    → Expr | ε  
-
-
-
-
-
-Var        →     Id Var'
-
-Var'       →     '[' Expr ']' | ε   
-
-                                               
-Expr       → ExprOr | '[' ListComprehension ']'
-
-ExprOr     → ExprAnd ExprOr'
-
-ExprOr'    → '||' ExprAnd ExprOr' | ε
-
-ExprAnd    → ExprNot ExprAnd'
-
-ExprAnd'   → '&&' ExprNot ExprAnd' | ε
-
-ExprNot    → '!' ExprNot | ExprRel
-
-ExprRel    → ExprAdd ExprRel'
-
-ExprRel'   → Op ExprAdd | ε
-
-ExprAdd    → ExprMul ExprAdd'
-
-ExprAdd'   → '+' ExprMul ExprAdd' | '-' ExprMul ExprAdd' | ε
-
-ExprMul    → ExprPrim ExprMul'
-
-ExprMul'   → '*' ExprPrim ExprMul' | '/' ExprPrim ExprMul' | ε
-
-ExprPrim   → '(' Expr ')' | Compr | Id ExprPrim' | Number | 'true' | 'false'
-
-ExprPrim'  → '[' Expr ']' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε
-
-Compr      → '[' Id '->' Id '|' Expr ']'
-
-ListExpr   → Expr ListExpr' | ε
-
-ListExpr'  → ',' ListExpr | ε
-
-ListComprehension  → declaracao | ExpBool
-
-
-// [i -> lista| i > q];
-
-
-
-Op         → '<=' | '>=' | '<' | '>' | '==' | '!='   
-                                                     
-
-
-
-                              
-Id      →     Char Id'
-
-Id'     →     Word | ε 
-
-Word       → Char Word | Number Word | Char | Number            // Word    →   Char Word' | Number Word'
-                                                                // Word'   →   Word | ε
-                                                                
-Char       → 'a' | ... | 'z' | 'A' | ... | 'Z'                 
-
-Number     → '0' | ... | '9'                                    
-                                                  
-# corrigir expressoes p/ tirar relacionais de aritmeticas
-# fazer list comprehension
+Op             → '<=' | '>=' | '<' | '>' | '==' | '!='
