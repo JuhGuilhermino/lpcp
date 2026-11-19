@@ -52,7 +52,7 @@ Var'           → '[' Expr ']' | ε
 
 Expr           → ExprOr
 
-ExprOr         → ExprAnd ExprOr' | ε
+ExprOr         → ExprAnd ExprOr'
 ExprOr'        → '||' ExprAnd ExprOr' | ε
 
 ExprAnd        → ExprNot ExprAnd'

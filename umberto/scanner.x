@@ -19,13 +19,15 @@ tokens :-
   end                                    { \p s -> Token p End}
   :                                      { \p s -> Token p Colon}
   ";"                                    { \p s -> Token p SemiColon}
-  int                                    { \p s -> Token p (Type s)}
+  ("int"|"bool")                         { \p s -> Token p (Type s)}
   :=                                     { \p s -> Token p Assign}
   if                                     { \p s -> Token p If}
   then                                   { \p s -> Token p Then}
   write                                  { \p s -> Token p Write}
   >                                      { \p s -> Token p Greater}
+  "+"                                    { \p s -> Token p Add}
   $digit+                                { \p s -> Token p (Int (read s))}
+  ("True"|"False")                       {\p s -> Token p (Bool (read s))}
   $alpha [$alpha $digit \_ \']*          { \p s -> Token p (Id s)}
   \" $alpha [$alpha $digit ! \_ \']* \"  { \p s -> Token p (String s)}
 
@@ -50,9 +52,11 @@ data TokenClass =
   Then |
   Write |
   Greater |
+  Add |
   Type String |
   Id String |
   Int Int |
+  Bool Bool |
   String String
   deriving (Eq,Show)
 
