@@ -22,8 +22,8 @@ kw_programToken = tokenPrim show update_pos get_token where
 
 -- Tokens para variáveis
 kw_intToken = tokenPrim show update_pos get_token where
-get_token token@(Token p KW_TOKEN) = Just token
-get_token _ = Nothing
+  get_token token@(Token p KW_INT) = Just token
+  get_token _ = Nothing
 
 kw_boolToken = tokenPrim show update_pos get_token where
   get_token token@(Token p KW_BOOL) = Just token
@@ -98,6 +98,7 @@ kw_returnToken = tokenPrim show update_pos get_token where
   get_token token@(Token p KW_RETURN) = Just token
   get_token _ = Nothing
 
+
 -- controle & comandos
 
 kw_ifToken = tokenPrim show update_pos get_token where
@@ -132,14 +133,117 @@ idToken = tokenPrim show update_pos get_token where
   get_token token@(Token p (Id x)) = Just token
   get_token _  = Nothing
 
+
+-- operadores 
+
+op_assignToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_ASSIGN) = Just token
+  get_token _ = Nothing
+
+op_iteratorToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_ITERATOR) = Just token
+  get_token _ = Nothing
+
+op_comprehensionToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_COMPREHENSION) = Just token
+  get_token _ = Nothing
+
+op_plusToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_PLUS) = Just token
+  get_token _ = Nothing
+
+op_minusToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_MINUS) = Just token
+  get_token _ = Nothing
+
+op_asteriskToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_ASTERISK) = Just token
+  get_token _ = Nothing
+
+op_slashToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_SLASH) = Just token
+  get_token _ = Nothing
+
+op_eqToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_EQ) = Just token
+  get_token _ = Nothing
+
+op_neqToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_NEQ) = Just token
+  get_token _ = Nothing
+
+op_greaterToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_GREATER) = Just token
+  get_token _ = Nothing
+
+op_lesserToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_LESSER) = Just token
+  get_token _ = Nothing
+
+op_geqToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_GEQ) = Just token
+  get_token _ = Nothing
+
+op_leqToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_LEQ) = Just token
+  get_token _ = Nothing
+
+op_andToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_AND) = Just token
+  get_token _ = Nothing
+
+op_orToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_OR) = Just token
+  get_token _ = Nothing
+
+op_notToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p OP_NOT) = Just token
+  get_token _ = Nothing
+
+
 -- pontuacao
 
-Token = tokenPrim show update_pos get_token where
-  get_token token@(Token p ) = Just token
+punc_lparenToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p PUNC_LPAREN) = Just token
+  get_token _ = Nothing
+
+punc_rparenToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p PUNC_RPAREN) = Just token
+  get_token _ = Nothing
+
+punc_lbraceToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p PUNC_LBRACE) = Just token
+  get_token _ = Nothing
+
+punc_rbraceToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p PUNC_RBRACE) = Just token
+  get_token _ = Nothing
+
+punc_lbracketToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p PUNC_LBRACKET) = Just token
+  get_token _ = Nothing
+
+punc_rbracketToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p PUNC_RBRACKET) = Just token
+  get_token _ = Nothing
+
+punc_semicolonToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p PUNC_SEMICOLON) = Just token
+  get_token _ = Nothing
+
+punc_colonToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p PUNC_COLON) = Just token
+  get_token _ = Nothing
+
+punc_commaToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p PUNC_COMMA) = Just token
+  get_token _ = Nothing
+
+punc_dotToken = tokenPrim show update_pos get_token where
+  get_token token@(Token p PUNC_DOT) = Just token
   get_token _ = Nothing
   
-
-
+  
 
 -- posicoes dos tokens (linha, coluna)
 update_pos :: SourcePos -> Token -> [Token] -> SourcePos
