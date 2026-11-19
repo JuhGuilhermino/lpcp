@@ -66,13 +66,14 @@ tokens :-
     function                               {\p s -> Token p KW_FUNCTION}
     main                                   {\p s -> Token p KW_MAIN}
     return                                 {\p s -> Token p KW_RETURN}
---controle
+--controle & comandos
     if                                     {\p s -> Token p KW_IF}
     endif                                  {\p s -> Token p KW_ENDIF}
     else                                   {\p s -> Token p KW_ELSE}
     until                                  {\p s -> Token p KW_UNTIL}
     perform                                {\p s -> Token p KW_PERFORM}    
     for                                    {\p s -> Token p KW_FOR}
+    shout                                  {\p s -> Token p KW_SHOUT}
 --operadores  
     "<-"                                      {\p s -> Token p OP_ASSIGN} 
     "->"                                      {\p s -> Token p OP_ITERATOR} 
@@ -136,13 +137,14 @@ data TokenClass =
   KW_FUNCTION |
   KW_MAIN |
   KW_RETURN |
---controle
+--controle & print
   KW_IF |
   KW_ENDIF |
   KW_ELSE |
   KW_UNTIL |
   KW_PERFORM |    
   KW_FOR |
+  KW_SHOUT |
 --operadores
   OP_ASSIGN |
   OP_ITERATOR |
