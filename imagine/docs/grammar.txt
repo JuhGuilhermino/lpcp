@@ -30,7 +30,7 @@ CondStmt       → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'
 ElseStmt       → 'else' ElseStmt' | ε
 ElseStmt'      → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt | '(' Stmts ')'
 
-PrintStmt      → 'puts' '(' Expr ')'
+PrintStmt      → 'shout' '{' Expr '}'
 
 WhileStmt      → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
 
