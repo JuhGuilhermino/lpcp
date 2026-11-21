@@ -74,6 +74,7 @@ tokens :-
     perform                                {\p s -> Token p KW_PERFORM}    
     for                                    {\p s -> Token p KW_FOR}
     shout                                  {\p s -> Token p KW_SHOUT}
+    get                                    {\p s -> Token p KW_GET}
 --operadores  
     "<-"                                      {\p s -> Token p OP_ASSIGN} 
     "->"                                      {\p s -> Token p OP_ITERATOR} 
@@ -145,6 +146,7 @@ data TokenClass =
   KW_PERFORM |    
   KW_FOR |
   KW_SHOUT |
+  KW_GET |
 --operadores
   OP_ASSIGN |
   OP_ITERATOR |

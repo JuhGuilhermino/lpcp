@@ -1,1 +1,42 @@
 COMENTARIO: E leia uma quantidade desconhecida de números e informe quantos deles estão nos seguintes intervalos fechados: [0, 25], [26, 50], [51, 75] e [76, 100]. A entrada de dados deve terminar quando for lido um número negativo.
+
+main{} (
+
+    int a <- 0;
+    int cont1 <- 0;
+    int cont2 <- 0;
+    int cont3 <- 0;
+    int cont4 <- 0;
+
+    get{a};
+
+    while {a > 0} {
+
+        if {a >= 0 && a <= 25} (
+            cont1 <- cont1 + 1;
+        )
+
+        else if {a <= 50} (
+            cont2 <- cont2 + 1;
+        )
+
+        else if {a <= 75} (
+            cont3 <- cont3 + 1;
+        )
+        
+        else {a <= 100} (
+            cont4 <- cont4 + 1;
+        )
+
+        endif
+
+        get{a};
+
+    }
+
+    shout{cont1};
+    shout{cont2};
+    shout{cont3};
+    shout{cont4};
+
+)

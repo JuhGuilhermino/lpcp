@@ -53,7 +53,7 @@ kw_stringToken = tokenPrim show update_pos get_token where
 
 -- a string propriamente dita
 stringToken :: P Token
-stringToken = tokenPrim show update_pos get_token where
+stringToken = tokenPrim show update_pos get_token where 
   get_token token@(Token _ (String _)) = Just token
   get_token _ = Nothing
 
@@ -329,10 +329,6 @@ defProgram = do
 
   return (a++b)
 
--- DefSub → 'procedure' DefProc DefSub | 'function' DefFunc DefSub | ε
-defSub :: P [Token]
-defSub = return []
-
 -- DefMain → 'main' '{' '}' '(' Stmts ')'
 defMain :: P [Token]
 defMain = do
@@ -345,13 +341,487 @@ defMain = do
   
   return ([a,b,c,d]++e++[f])
 
+-- DefSub → 'procedure' DefProc DefSub | 'function' DefFunc DefSub | ε
+defSub :: P [Token]
+defSub = 
+  do
+    a <- kw_procedureToken
+    b <- defProc
+    c <- defSub
+    return ([a]++b++c)
+  <|>
+  do
+    a <- kw_functionToken
+    b <- defFunc
+    c <- defSub
+    return ([a]++b++c)
+  <|>
+    return []
+
+-- DefFunc → Type Id '{' Params '}' '(' Stmts 'return' Expr ';' ')'
+defFunc :: P [Token]
+defFunc = do
+  a <- defType
+  b <- idToken
+  c <- punc_lbraceToken
+  d <- params
+  e <- punc_rbraceToken
+  f <- punc_lparenToken
+  g <- stmts
+  h <- kw_returnToken
+  i <- expr
+  j <- punc_semicolonToken
+  k <- punc_rparenToken
+
+  return(a++[b,c]++d++[e,f]++g++[h]++i++[j,k])
+
+-- DefProc → Id '{' Params '}' '(' Stmts ')'
+defProc :: P [Token]
+defProc = do
+  a <- idToken
+  b <- punc_lbraceToken
+  c <- params
+  d <- punc_rbraceToken
+  e <- punc_lparenToken
+  f <- stmts
+  g <- punc_rparenToken
+
+  return([a,b]++c++[d,e]++f++[g])
+
+-- Params → Type Id Params' | ε
+params :: P [Token]
+params = fail "Params nao implementado!"
+
+-- Params' → ',' Type Id Params' | ε
+params' :: P [Token]
+params' = fail "Params' nao implementado!"
+
+-- Type → PrimType | StructType
+defType :: P [Token]
+defType =
+  do
+    a <- primType
+    return ([a])
+  <|>
+  do
+    b <- structType
+    return (b)
+
+-- PrimType → 'int' | 'bool' | 'float' | 'string' | 'u8' | 'complex' | 'kernel' | 'image' | 'signal'
+primType :: P Token
+primType =
+  do
+    a <- kw_intToken
+    return (a)
+  <|>
+  do
+    a <- kw_boolToken
+    return (a)
+  <|>
+  do
+    a <- kw_floatToken
+    return (a)
+  <|>
+  do
+    a <- kw_stringToken
+    return (a)
+  <|>
+  do
+    a <- kw_u8Token
+    return (a)
+  <|>
+  do
+    a <- kw_complexToken
+    return (a)
+  <|>
+  do
+    a <- kw_kernelToken
+    return (a)
+  <|>
+  do
+    a <- kw_imageToken
+    return (a)
+  <|>
+  do
+    a <- kw_signalToken
+    return (a)
+
+
+-- StructType → 'list' '<' Type '>'
+structType :: P [Token]
+structType = 
+  do
+    a <- kw_listToken
+    b <- op_lesserToken
+    c <- defType
+    d <- op_greaterToken
+    return ([a]++[b]++c++[d])
+
 -- Stmts → St ';' Stmts | ε
 stmts :: P [Token]
-stmts = return []
+stmts = 
+  do
+    a <- st 
+    b <- punc_semicolonToken
+    c <- stmts 
+    return (a++[b]++c)
+  <|>
+    return []
 
--- continuar...
+-- St → CondStmt | WhileStmt | ForStmt | DeclStmt | Id StTail | PrintStmt
+st :: P [Token]
+st =
+  do
+    a <- condStmt
+    return(a)
+  <|>
+  do
+    a <- whileStmt
+    return(a)
+  <|>
+  do
+    a <- forStmt
+    return(a)
+  <|>
+  do
+    a <- declStmt
+    return(a)
+  <|>
+  do
+    a <- idToken
+    b <- stTail
+    return([a]++b)
+  <|>
+  do
+    a <- printStmt
+    return(a)
+  <|>
+  do
+    a <- getStmt
+    return(a)
 
+-- StTail → AttrStmt | '[' Expr ']' StTail' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε
+stTail :: P [Token]
+stTail = fail "StTail nao implementado!"
 
+-- StTail' → AttrStmt | '.' Id '(' ListExpr ')'
+stTail' :: P [Token]
+stTail' = fail "StTail' nao implementado!"
+
+-- CondStmt → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'
+condStmt :: P [Token]
+condStmt = fail "CondStmt nao implementado!"
+
+-- ElseStmt → 'else' ElseStmt' | ε
+elseStmt :: P [Token] 
+elseStmt = fail "ElseStmt nao implementado!"
+
+-- ElseStmt' → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt | '(' Stmts ')'
+elseStmt' :: P [Token]
+elseStmt' = fail "ElseStmt' nao implementado!"
+
+-- PrintStmt → 'shout' '{' Expr '}'
+printStmt :: P [Token]
+printStmt = 
+  do
+    a <- kw_shoutToken
+    b <- punc_lbraceToken
+    c <- expr
+    d <- punc_rbraceToken
+    return ([a]++[b]++c++[d])
+
+-- getStmt :: P [Token]
+-- getStmt do
+
+-- WhileStmt → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
+whileStmt :: P [Token]
+whileStmt = fail "WhileStmt nao implementado!"
+
+-- ForStmt → 'for' '{' ForStmt'
+forStmt :: P [Token]
+forStmt = fail "ForStmt nao implementado!"
+
+-- ForStmt' → Id ForDistinguish | DeclStmt ForRegular
+forStmt' :: P [Token]
+forStmt' = fail "ForStmt' nao implementado!"
+
+-- ForDistinguish → '->' Expr '}' '(' Stmts ')' | Var DeclStmt' ForRegular
+forDistinguish :: P [Token]
+forDistinguish = fail "ForDistinguish nao implementado!"
+
+-- ForRegular → ',' Expr ',' Var AttrStmt '}' '(' Stmts ')'
+forRegular :: P [Token]
+forRegular = fail "ForRegular nao implementado!"
+
+-- AttrStmt → '<-' Expr
+attrStmt :: P [Token]
+attrStmt =
+  do
+    a <- op_assignToken
+    b <- expr
+    return([a]++b)
+
+-- DeclStmt → Type Id DeclStmt'
+declStmt :: P [Token]
+declStmt = 
+  do
+    a <- defType
+    b <- idToken
+    c <- declStmt'
+    return (a++[b]++c)
+
+-- DeclStmt' → AttrStmt | ε
+declStmt' :: P [Token]
+declStmt' = 
+  do
+    a <- attrStmt
+    return (a)
+  <|>
+  do
+    return []
+
+-- Var → Id Var'
+var :: P [Token]
+var = fail "Var nao implementado!"
+
+-- Var' → '[' Expr ']' | ε
+var' :: P [Token]
+var' = fail "Var' nao implementado!"
+
+-- Expr → ExprOr
+expr :: P [Token]
+expr = exprOr
+
+-- ExprOr → ExprAnd ExprOr'
+exprOr :: P [Token]
+exprOr = do
+  a <- exprAnd
+  b <- exprOr'
+
+  return(a++b)
+
+-- ExprOr' → '||' ExprAnd ExprOr' | ε
+exprOr' :: P [Token]
+exprOr' = 
+  do
+    a <- op_andToken
+    b <- exprAnd 
+    c <- exprOr'
+    return ([a]++b++c)
+  <|>
+    return []
+
+-- ExprAnd → ExprNot ExprAnd'
+exprAnd :: P [Token]
+exprAnd = do
+  a <- exprNot
+  b <- exprAnd'
+  
+  return(a++b)
+
+-- ExprAnd' → '&&' ExprNot ExprAnd' | ε
+exprAnd' :: P [Token]
+exprAnd' = 
+  do
+    a <- op_andToken
+    b <- exprNot
+    c <- exprAnd'
+    return ([a]++b++c)
+  <|>
+    return []
+
+-- ExprNot  → '!' ExprNot | ExprRel
+exprNot :: P [Token]
+exprNot = 
+  do
+    a <- op_notToken
+    b <- exprNot
+    return (a:b)
+  <|>
+  do
+    a <- exprRel
+    return (a)
+
+-- ExprRel → ExprAdd ExprRel'
+exprRel :: P [Token]
+exprRel = do
+  a <- exprAdd
+  b <- exprRel' 
+
+  return(a++b)
+
+-- ExprRel' → Op ExprAdd | ε
+exprRel' :: P [Token]
+exprRel' = 
+  do
+    a <- op
+    b <- exprAdd
+    return(a:b)
+  <|>
+    return []
+
+-- ExprAdd → ExprMul ExprAdd'
+exprAdd :: P [Token]
+exprAdd = do
+  a <- exprMul
+  b <- exprAdd'
+  
+  return(a++b)
+
+-- ExprAdd' → '+' ExprMul ExprAdd' | '-' ExprMul ExprAdd' | ε
+exprAdd' :: P [Token]
+exprAdd' = 
+  do
+    a <- op_plusToken
+    b <- exprMul
+    c <- exprAdd'
+    return([a]++b++c)
+  <|>
+  do
+    a <- op_minusToken
+    b <- exprMul
+    c <- exprAdd'
+    return([a]++b++c)
+  <|>
+    return []
+
+-- ExprMul → ExprPrim ExprMul'
+exprMul :: P [Token]
+exprMul = do
+  a <- exprPrim
+  b <- exprMul'
+
+  return (a++b)
+
+-- ExprMul' → '*' ExprPrim ExprMul' | '/' ExprPrim ExprMul' | ε
+exprMul' :: P [Token]
+exprMul' = 
+  do
+    a <- op_asteriskToken
+    b <- exprPrim
+    c <- exprMul'
+    return([a]++b++c)
+  <|>
+  do
+    a <- op_slashToken
+    b <- exprPrim
+    c <- exprMul'
+    return([a]++b++c)
+  <|>
+    return []
+
+-- ExprPrim → '(' Expr ')' | '[' ListTail | Id ExprPrim' | 'true' | 'false' | Int | Float | String
+exprPrim :: P [Token]
+exprPrim = 
+  do
+    a <- punc_lparenToken
+    b <- expr
+    c <- punc_rparenToken
+    return([a]++b++[c])
+  <|>
+  do
+    a <- punc_lbracketToken
+    b <- listTail
+    return(a:b)
+  <|>
+  do
+    a <- idToken
+    b <- exprPrim'
+    return([a]++b)
+  <|>
+  do
+    a <- kw_trueToken
+    return([a])
+  <|>
+  do
+    a <- kw_falseToken
+    return([a])
+  <|>
+  do
+    a <- intToken
+    return([a])
+  <|>
+  do
+    a <- floatToken
+    return([a])
+  <|>
+  do
+    a <- stringToken
+    return([a])
+
+-- ExprPrim' → '[' Expr ']' | '(' ListExpr ')' ExprPrim' | '.' Id ExprPrim' | ε
+exprPrim' :: P [Token]
+exprPrim' = 
+  do
+    a <- punc_lbracketToken
+    b <- expr
+    c <- punc_rbracketToken
+    return ([a]++b++[c])
+  <|>
+  do
+    a <- punc_lparenToken
+    b <- listExpr
+    c <- punc_rparenToken
+    d <- exprPrim'
+    return ([a]++b++[c]++d)
+  <|>
+  do
+    a <- punc_dotToken
+    b <- idToken
+    c <- exprPrim'
+    return ([a]++[b]++c)
+  <|>
+  do
+    return ([])
+
+-- ListExpr → Expr ListExpr' | ε
+listExpr :: P [Token]
+listExpr = 
+  do
+    a <- expr
+    b <- listExpr'
+    return (a++b)
+  <|>
+  do
+    return ([])
+
+-- ListExpr' → ',' ListExpr | ε
+listExpr' :: P [Token]
+listExpr' = 
+  do
+    a <- punc_commaToken
+    b <- listExpr
+    return ([a]++b)
+  <|>
+  do
+    return([])
+
+-- ListTail → Id '->' Expr '|' Expr ']' | ListExpr ']'
+listTail :: P [Token]
+listTail = 
+  do
+    a <- idToken
+    b <- op_iteratorToken
+    c <- expr
+    d <- op_comprehensionToken
+    e <- expr
+    f <- punc_rbracketToken
+    return ([a,b]++c++[d]++e++[f])
+  <|>
+  do
+    a <- listExpr
+    b <- punc_rbracketToken
+    return(a++[b])
+
+-- Op → '<=' | '>=' | '<' | '>' | '==' | '!='
+op :: P Token
+op = op_leqToken
+  <|> op_geqToken
+  <|> op_lesserToken
+  <|> op_greaterToken
+  <|> op_eqToken
+  <|> op_neqToken
+  
 
 -----------------------------------------------------------------------------
 -- FUNÇÕES PARA VERIFICAÇÃO DE TIPOS
