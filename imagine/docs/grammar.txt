@@ -32,6 +32,8 @@ ElseStmt'      → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt | '(' Stmts ')'
 
 PrintStmt      → 'shout' '{' Expr '}'
 
+GetStmt        → 'get' '{' Var '}'
+
 WhileStmt      → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
 
 ForStmt        → 'for' '{' ForStmt'

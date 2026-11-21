@@ -171,6 +171,11 @@ kw_shoutToken = tokenPrim show update_pos get_token where
   get_token token@(Token _ KW_SHOUT) = Just token
   get_token _ = Nothing
 
+kw_getToken :: P Token
+kw_getToken = tokenPrim show update_pos get_token where
+  get_token token@(Token _ KW_GET) = Just token
+  get_token _ = Nothing
+
 idToken :: P Token
 idToken = tokenPrim show update_pos get_token where
   get_token token@(Token _ (Id _)) = Just token
@@ -502,23 +507,81 @@ st =
 
 -- StTail → AttrStmt | '[' Expr ']' StTail' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε
 stTail :: P [Token]
-stTail = fail "StTail nao implementado!"
-
+stTail = 
+  do
+    a <- attrStmt
+    return (a)
+  <|>
+  do
+    a <- punc_lbracketToken
+    b <- expr
+    c <- punc_rbracketToken
+    d <- stTail'
+    return([a]++b++[c]++d)
+  <|>
+  do
+    a <- punc_lparenToken
+    b <- listExpr
+    c <- punc_rparenToken
+    return([a]++b++[c])
+  <|>
+  do
+    a <- punc_dotToken
+    b <- idToken
+    c <- punc_lparenToken
+    d <- listExpr
+    e <- punc_rparenToken
+    return([a,b,c]++d++[e])
+  <|>
+    return []
+    
 -- StTail' → AttrStmt | '.' Id '(' ListExpr ')'
 stTail' :: P [Token]
 stTail' = fail "StTail' nao implementado!"
 
 -- CondStmt → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'
 condStmt :: P [Token]
-condStmt = fail "CondStmt nao implementado!"
+condStmt = do
+  a <- kw_ifToken
+  b <- punc_lbraceToken
+  c <- expr
+  d <- punc_rbraceToken
+  e <- punc_lparenToken
+  f <- stmts
+  g <- punc_rparenToken
+  h <- elseStmt
+  i <- kw_endifToken
+  return([a,b]++c++[d,e]++f++[g]++h++[i])
 
 -- ElseStmt → 'else' ElseStmt' | ε
 elseStmt :: P [Token] 
-elseStmt = fail "ElseStmt nao implementado!"
+elseStmt =
+  do
+    a <- kw_elseToken
+    b <- elseStmt'
+    return([a]++b)
+  <|>
+    return []
 
 -- ElseStmt' → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt | '(' Stmts ')'
 elseStmt' :: P [Token]
-elseStmt' = fail "ElseStmt' nao implementado!"
+elseStmt' = 
+  do
+    a <- kw_ifToken
+    b <- punc_lbraceToken
+    c <- expr
+    d <- punc_rbraceToken
+    e <- punc_lparenToken
+    f <- stmts
+    g <- punc_rparenToken
+    h <- elseStmt
+    return([a,b]++c++[d,e]++f++[g]++h)
+  <|>
+  do
+    a <- punc_lparenToken
+    b <- stmts
+    c <- punc_rparenToken
+    return([a]++b++[c])
 
 -- PrintStmt → 'shout' '{' Expr '}'
 printStmt :: P [Token]
@@ -530,12 +593,28 @@ printStmt =
     d <- punc_rbraceToken
     return ([a]++[b]++c++[d])
 
--- getStmt :: P [Token]
--- getStmt do
+-- GetStmt → 'get' '{' Var '}'
+getStmt :: P [Token]
+getStmt = do
+  do
+    a <- kw_getToken
+    b <- punc_lbraceToken
+    c <- var
+    d <- punc_rbraceToken
+    return ([a]++[b]++c++[d])
 
 -- WhileStmt → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
 whileStmt :: P [Token]
-whileStmt = fail "WhileStmt nao implementado!"
+whileStmt = do
+  a <- kw_untilToken
+  b <- punc_lbraceToken
+  c <- expr
+  d <- punc_rbraceToken
+  e <- kw_performToken
+  f <- punc_lparenToken
+  g <- stmts
+  h <- punc_rparenToken
+  return([a,b]++c++[d,e,f]++g++[h])
 
 -- ForStmt → 'for' '{' ForStmt'
 forStmt :: P [Token]
@@ -582,11 +661,21 @@ declStmt' =
 
 -- Var → Id Var'
 var :: P [Token]
-var = fail "Var nao implementado!"
+var = do
+  a <- idToken
+  b <- var'
+  return([a]++b)
 
 -- Var' → '[' Expr ']' | ε
 var' :: P [Token]
-var' = fail "Var' nao implementado!"
+var' = 
+  do
+    a <- punc_lbracketToken
+    b <- expr
+    c <- punc_rbracketToken
+    return([a]++b++[c])
+  <|>
+    return []
 
 -- Expr → ExprOr
 expr :: P [Token]
