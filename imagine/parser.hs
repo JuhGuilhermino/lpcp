@@ -395,11 +395,26 @@ defProc = do
 
 -- Params → Type Id Params' | ε
 params :: P [Token]
-params = fail "Params nao implementado!"
+params = 
+  do
+    a <- defType
+    b <- idToken
+    c <- params'
+    return(a++[b]++c)
+  <|>
+    return []
 
 -- Params' → ',' Type Id Params' | ε
 params' :: P [Token]
-params' = fail "Params' nao implementado!"
+params' = 
+  do
+    a <- punc_commaToken
+    b <- defType
+    c <- idToken
+    d <- params'
+    return([a]++b++[c]++d)
+  <|>
+    return []
 
 -- Type → PrimType | StructType
 defType :: P [Token]
@@ -537,7 +552,18 @@ stTail =
     
 -- StTail' → AttrStmt | '.' Id '(' ListExpr ')'
 stTail' :: P [Token]
-stTail' = fail "StTail' nao implementado!"
+stTail' = 
+  do
+    a <- attrStmt
+    return (a)
+  <|>
+  do
+    a <- punc_dotToken
+    b <- idToken
+    c <- punc_lparenToken
+    d <- listExpr
+    e <- punc_rparenToken
+    return ([a,b,c]++d++[e])
 
 -- CondStmt → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'
 condStmt :: P [Token]
@@ -596,12 +622,11 @@ printStmt =
 -- GetStmt → 'get' '{' Var '}'
 getStmt :: P [Token]
 getStmt = do
-  do
-    a <- kw_getToken
-    b <- punc_lbraceToken
-    c <- var
-    d <- punc_rbraceToken
-    return ([a]++[b]++c++[d])
+  a <- kw_getToken
+  b <- punc_lbraceToken
+  c <- var
+  d <- punc_rbraceToken
+  return ([a]++[b]++c++[d])
 
 -- WhileStmt → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
 whileStmt :: P [Token]
@@ -618,19 +643,56 @@ whileStmt = do
 
 -- ForStmt → 'for' '{' ForStmt'
 forStmt :: P [Token]
-forStmt = fail "ForStmt nao implementado!"
+forStmt = do
+  a <- kw_forToken
+  b <- punc_lbraceToken
+  c <- forStmt'
+  return ([a,b]++c)
 
 -- ForStmt' → Id ForDistinguish | DeclStmt ForRegular
 forStmt' :: P [Token]
-forStmt' = fail "ForStmt' nao implementado!"
+forStmt' = 
+  do
+    a <- idToken
+    b <- forDistinguish
+    return([a]++b)
+  <|>
+  do
+    a <- declStmt
+    b <- forRegular
+    return (a++b)
 
 -- ForDistinguish → '->' Expr '}' '(' Stmts ')' | Var DeclStmt' ForRegular
 forDistinguish :: P [Token]
-forDistinguish = fail "ForDistinguish nao implementado!"
+forDistinguish = 
+  do
+    a <- op_iteratorToken
+    b <- expr
+    c <- punc_rbraceToken
+    d <- punc_lparenToken
+    e <- stmts
+    f <- punc_rparenToken
+    return ([a]++b++[c,d]++e++[f])
+  <|>
+  do
+    a <- var
+    b <- declStmt'
+    c <- forRegular
+    return (a++b++c)
 
 -- ForRegular → ',' Expr ',' Var AttrStmt '}' '(' Stmts ')'
 forRegular :: P [Token]
-forRegular = fail "ForRegular nao implementado!"
+forRegular = do
+  a <- punc_commaToken
+  b <- expr
+  c <- punc_commaToken
+  d <- var
+  e <- attrStmt
+  f <- punc_rbraceToken
+  g <- punc_lparenToken
+  h <- stmts
+  i <- punc_rparenToken
+  return ([a]++b++[c]++d++e++[f,g]++h++[i])
 
 -- AttrStmt → '<-' Expr
 attrStmt :: P [Token]
@@ -693,7 +755,7 @@ exprOr = do
 exprOr' :: P [Token]
 exprOr' = 
   do
-    a <- op_andToken
+    a <- op_orToken
     b <- exprAnd 
     c <- exprOr'
     return ([a]++b++c)

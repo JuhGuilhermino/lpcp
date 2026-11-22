@@ -20,7 +20,7 @@ StructType     → 'list' '<' Type '>'
 
 Stmts          → St ';' Stmts | ε
 
-St             → CondStmt | WhileStmt | ForStmt | DeclStmt | Id StTail | PrintStmt
+St             → CondStmt | WhileStmt | ForStmt | DeclStmt | Id StTail | PrintStmt | GetStmt
 
 StTail         → AttrStmt | '[' Expr ']' StTail' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε
 StTail'        → AttrStmt | '.' Id '(' ListExpr ')'
