@@ -59,6 +59,7 @@ tokens :-
     enum                                   {\p s -> Token p KW_ENUM}
     struct                                 {\p s -> Token p KW_STRUCT}
     list                                   {\p s -> Token p KW_LIST}
+    matrix                                 {\p s -> Token p KW_MATRIX}
     true                                   {\p s -> Token p KW_TRUE}
     false                                  {\p s -> Token p KW_FALSE}
 --subprogramas
@@ -128,6 +129,7 @@ data TokenClass =
   KW_IMAGE |
   KW_SIGNAL |
   KW_LIST |
+  KW_MATRIX |
   KW_TYPE |
   KW_STRUCT |
   KW_ENUM |

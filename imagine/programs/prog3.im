@@ -1,1 +1,28 @@
-COMENTARIO: leia duas matrizes numéricas e, quando possível, imprima a soma e o produto dessas matrizes. Caso uma operação não possa ser realizada para as matrizes lidas, imprima uma mensagem informando da impossibilidade.
+main{} (
+    int l1, c1, l2, c2;
+    
+    get{l1, c1};
+    matrix<int> mtx1 <- zeros(l1, c1);
+    get{mtx1};
+
+    get{l2, c2};
+    matrix<int> mtx2 <- zeros(l2, c2);
+    get{mtx2};
+
+    if {l1 == l2 && c1 == c2} (
+        shout{"soma das matrizes:"};
+        shout{a+b};
+    )
+    else (
+        shout{"soma impossível!!! dimensões das matrizes são diferentes"};
+    )
+    endif
+
+    if {c1 == l2} (
+        shout{a*b};
+    )
+    else(
+        shout{"produto impossível!!! nº de colunas da primeira matriz é diferente do nº de linhas da segunda matriz"};
+    )
+    endif
+)

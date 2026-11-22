@@ -36,7 +36,7 @@ ElseStmt'      → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt | '(' Stmts ')'
 
 PrintStmt      → 'shout' '{' Expr '}'
 
-GetStmt        → 'get' '{' Var '}'
+GetStmt        → 'get' '{' Var VarList '}'
 
 WhileStmt      → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
 
@@ -59,6 +59,7 @@ DeclStmt'      → AttrStmt | ε
 
 Var            → Id Var'
 Var'           → '[' Expr ']' | ε
+VarList        → ',' Var VarList | ε
 
 
 Expr           → ExprOr

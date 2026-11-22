@@ -102,6 +102,11 @@ kw_listToken = tokenPrim show update_pos get_token where
   get_token token@(Token _ KW_LIST) = Just token
   get_token _ = Nothing
 
+kw_matrixToken :: P Token
+kw_matrixToken = tokenPrim show update_pos get_token where
+  get_token token@(Token _ KW_MATRIX) = Just token
+  get_token _ = Nothing
+
 kw_trueToken :: P Token
 kw_trueToken = tokenPrim show update_pos get_token where
   get_token token@(Token _ KW_TRUE) = Just token
@@ -467,7 +472,7 @@ primType =
     return (a)
 
 
--- StructType → 'list' '<' Type '>'
+-- StructType → 'list' '<' Type '>' | 'matrix' '<' PrimType '>'
 structType :: P [Token]
 structType = 
   do
@@ -476,6 +481,13 @@ structType =
     c <- defType
     d <- op_greaterToken
     return ([a]++[b]++c++[d])
+  <|>
+  do
+    a <- kw_matrixToken
+    b <- op_lesserToken
+    c <- primType
+    d <- op_greaterToken
+    return ([a,b,c,d])
 
 -- Stmts → St Stmts | ε
 stmts :: P [Token]
@@ -633,14 +645,15 @@ printStmt =
     d <- punc_rbraceToken
     return ([a]++[b]++c++[d])
 
--- GetStmt → 'get' '{' Var '}'
+-- GetStmt → 'get' '{' Var VarList '}'
 getStmt :: P [Token]
 getStmt = do
   a <- kw_getToken
   b <- punc_lbraceToken
   c <- var
-  d <- punc_rbraceToken
-  return ([a]++[b]++c++[d])
+  d <- varList
+  e <- punc_rbraceToken
+  return ([a]++[b]++c++d++[e])
 
 -- WhileStmt → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
 whileStmt :: P [Token]
@@ -768,6 +781,17 @@ var' =
     b <- expr
     c <- punc_rbracketToken
     return([a]++b++[c])
+  <|>
+    return []
+
+-- VarList → ',' Var VarList | ε
+varList :: P [Token]
+varList = 
+  do
+    a <- punc_commaToken
+    b <- var
+    c <- varList
+    return([a]++b++c)
   <|>
     return []
 
