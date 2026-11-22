@@ -26,11 +26,11 @@ main{} (
             cont4 <- cont4 + 1;
         )
 
-        endif;
+        endif
 
         get{a};
 
-    );
+    )
 
     shout{cont1};
     shout{cont2};

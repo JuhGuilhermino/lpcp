@@ -477,32 +477,31 @@ structType =
     d <- op_greaterToken
     return ([a]++[b]++c++[d])
 
--- Stmts → St ';' Stmts | ε
+-- Stmts → St Stmts | ε
 stmts :: P [Token]
 stmts = 
   do
     a <- st 
-    b <- punc_semicolonToken
-    c <- stmts 
-    return (a++[b]++c)
+    b <- stmts 
+    return (a++b)
   <|>
     return []
 
--- St → CondStmt | WhileStmt | ForStmt | DeclStmt | Id StTail | PrintStmt
+-- St → SimpleStmt ';' | BlockStmt
 st :: P [Token]
 st =
   do
-    a <- condStmt
-    return(a)
+    a <- simpleStmt
+    b <- punc_semicolonToken
+    return(a++[b])
   <|>
   do
-    a <- whileStmt
+    a <- blockStmt
     return(a)
-  <|>
-  do
-    a <- forStmt
-    return(a)
-  <|>
+
+-- SimpleStmt → DeclStmt | Id StTail | PrintStmt | GetStmt
+simpleStmt :: P [Token]
+simpleStmt = 
   do
     a <- declStmt
     return(a)
@@ -518,6 +517,21 @@ st =
   <|>
   do
     a <- getStmt
+    return(a)
+
+-- Block Stmt → CondStmt | WhileStmt | ForStmt
+blockStmt :: P [Token]
+blockStmt =
+  do
+    a <- condStmt
+    return(a)
+  <|>
+  do
+    a <- whileStmt
+    return(a)
+  <|>
+  do
+    a <- forStmt
     return(a)
 
 -- StTail → AttrStmt | '[' Expr ']' StTail' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε

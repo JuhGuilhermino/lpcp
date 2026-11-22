@@ -18,9 +18,13 @@ PrimType       → 'int' | 'bool' | 'float' | 'string' | 'u8' | 'complex' | 'ker
 StructType     → 'list' '<' Type '>'
 
 
-Stmts          → St ';' Stmts | ε
+Stmts          → St Stmts | ε
 
-St             → CondStmt | WhileStmt | ForStmt | DeclStmt | Id StTail | PrintStmt | GetStmt
+St             → SimpleStmt ';' | BlockStmt
+
+SimpleStmt     → DeclStmt | Id StTail | PrintStmt | GetStmt
+
+Block Stmt     → CondStmt | WhileStmt | ForStmt
 
 StTail         → AttrStmt | '[' Expr ']' StTail' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε
 StTail'        → AttrStmt | '.' Id '(' ListExpr ')'
