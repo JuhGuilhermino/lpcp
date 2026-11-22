@@ -672,7 +672,7 @@ forStmt' =
     return([a]++b)
   <|>
   do
-    a <- declStmt
+    a <- singleDecl
     b <- forRegular
     return (a++b)
 
@@ -716,14 +716,32 @@ attrStmt =
     b <- expr
     return([a]++b)
 
--- DeclStmt → Type Id DeclStmt'
+-- DeclStmt → SingleDecl DeclList
 declStmt :: P [Token]
-declStmt = 
+declStmt = do
+  a <- singleDecl
+  b <- declList
+  return (a++b)
+
+-- SingleDecl → Type Id DeclStmt'
+singleDecl :: P [Token]
+singleDecl = do
+  a <- defType
+  b <- idToken
+  c <- declStmt'
+  return(a++[b]++c)
+
+-- DeclList → ',' Id DeclStmt' DeclList | ε
+declList :: P [Token]
+declList =
   do
-    a <- defType
+    a <- punc_commaToken
     b <- idToken
     c <- declStmt'
-    return (a++[b]++c)
+    d <- declList
+    return([a,b]++c++d)
+  <|>
+    return []
 
 -- DeclStmt' → AttrStmt | ε
 declStmt' :: P [Token]

@@ -15,7 +15,7 @@ Params'        → ',' Type Id Params' | ε
 
 Type           → PrimType | StructType
 PrimType       → 'int' | 'bool' | 'float' | 'string' | 'u8' | 'complex' | 'kernel' | 'image' | 'signal'
-StructType     → 'list' '<' Type '>'
+StructType     → 'list' '<' Type '>' | 'matrix' '<' PrimType '>'
 
 
 Stmts          → St Stmts | ε
@@ -24,7 +24,7 @@ St             → SimpleStmt ';' | BlockStmt
 
 SimpleStmt     → DeclStmt | Id StTail | PrintStmt | GetStmt
 
-Block Stmt     → CondStmt | WhileStmt | ForStmt
+BlockStmt     → CondStmt | WhileStmt | ForStmt
 
 StTail         → AttrStmt | '[' Expr ']' StTail' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε
 StTail'        → AttrStmt | '.' Id '(' ListExpr ')'
@@ -41,7 +41,7 @@ GetStmt        → 'get' '{' Var '}'
 WhileStmt      → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
 
 ForStmt        → 'for' '{' ForStmt'
-ForStmt'       → Id ForDistinguish | DeclStmt ForRegular
+ForStmt'       → Id ForDistinguish | SingleDecl ForRegular
 
 ForDistinguish → '->' Expr '}' '(' Stmts ')' | Var DeclStmt' ForRegular
 
@@ -49,7 +49,12 @@ ForRegular     → ',' Expr ',' Var AttrStmt '}' '(' Stmts ')'
 
 AttrStmt       → '<-' Expr
 
-DeclStmt       → Type Id DeclStmt'
+DeclStmt       → SingleDecl DeclList
+
+SingleDecl     → Type Id DeclStmt'
+
+DeclList       → ',' Id DeclStmt' DeclList | ε
+
 DeclStmt'      → AttrStmt | ε
 
 Var            → Id Var'
