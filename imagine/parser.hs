@@ -5,15 +5,25 @@ import Text.Parsec
 import Control.Monad.IO.Class
 import Text.Parsec.Pos
 import System.Environment
+import qualified Data.Map as Map
+import Data.List
+import System.Exit
+import System.IO
+import Data.Ord (Ordering(LT, EQ))
+import GHC.IO.Handle (hSetEncoding)
 
--- (mari) pelo q entendi a assinatura de todas as regras de produçao eh assim
--- REGRA :: ParsecT [Token] [(Token,Token)] IO ([Token])
--- i.e. ParsecT <ENTRADA> <ESTADO_USUARIO> <IO> <TIPO_RETORNO> 
--- entao conseguimos fazer um apelido p diminuir retrabalho ! 
--- (caso a gnt mude alguma coisa na tabela de simbolos)
+data IMType = TInt | TBool | TFloat | TString | TU8 | TComplex | TKernel | TImage | TSignal | TList IMType | TMatrix IMType 
+  deriving (Eq, Show)
 
-type P res = ParsecT [Token] [(Token,Token)] IO res
+data IMValue = VInt Int | VBool Bool | VFloat Double | VString String | VList [IMValue] 
+  deriving (Eq, Show)
 
+data IMState = IMState{
+  scopes :: [Map.Map String (IMType, IMValue)]
+  -- buffer :: [String]
+}
+
+type P res = ParsecT [Token] IMState IO res
 
 -- parsers p/ tokens
 -- palavra reservada para int
@@ -329,18 +339,16 @@ update_pos pos _ [] = pos
 
 
 --- parsers p nao terminais
-
 -- DefProgram → DefSub DefMain
-defProgram :: P [Token]
+defProgram :: P ()
 defProgram = do
   a <- defSub
   b <- defMain
   eof
-
-  return (a++b)
+  -- return (a++b)
 
 -- DefMain → 'main' '{' '}' '(' Stmts ')'
-defMain :: P [Token]
+defMain :: P ()
 defMain = do
   a <- kw_mainToken
   b <- punc_lbraceToken
@@ -348,28 +356,30 @@ defMain = do
   d <- punc_lparenToken
   e <- stmts
   f <- punc_rparenToken
-  
-  return ([a,b,c,d]++e++[f])
+  return()
+  -- return ([a,b,c,d]++e++[f])
 
--- DefSub → 'procedure' DefProc DefSub | 'function' DefFunc DefSub | ε
-defSub :: P [Token]
+-- [TO-DO] DefSub → 'procedure' DefProc DefSub | 'function' DefFunc DefSub | ε
+defSub :: P ()
 defSub = 
   do
     a <- kw_procedureToken
     b <- defProc
     c <- defSub
-    return ([a]++b++c)
+    return ()
+    -- return ([a]++b++c)
   <|>
   do
     a <- kw_functionToken
     b <- defFunc
     c <- defSub
-    return ([a]++b++c)
+    return ()
+    -- return ([a]++b++c)
   <|>
-    return []
+    return ()
 
--- DefFunc → Type Id '{' Params '}' '(' Stmts 'return' Expr ';' ')'
-defFunc :: P [Token]
+-- [TO-DO] DefFunc → Type Id '{' Params '}' '(' Stmts 'return' Expr ';' ')'
+defFunc :: P ()
 defFunc = do
   a <- defType
   b <- idToken
@@ -382,11 +392,11 @@ defFunc = do
   i <- expr
   j <- punc_semicolonToken
   k <- punc_rparenToken
+  return ()
+  -- return(a++[b,c]++d++[e,f]++g++[h]++i++[j,k])
 
-  return(a++[b,c]++d++[e,f]++g++[h]++i++[j,k])
-
--- DefProc → Id '{' Params '}' '(' Stmts ')'
-defProc :: P [Token]
+-- [TO-DO] DefProc → Id '{' Params '}' '(' Stmts ')'
+defProc :: P ()
 defProc = do
   a <- idToken
   b <- punc_lbraceToken
@@ -395,193 +405,206 @@ defProc = do
   e <- punc_lparenToken
   f <- stmts
   g <- punc_rparenToken
+  return ()
+  -- return([a,b]++c++[d,e]++f++[g])
 
-  return([a,b]++c++[d,e]++f++[g])
-
--- Params → Type Id Params' | ε
-params :: P [Token]
+-- [TO-DO] Params → Type Id Params' | ε
+params :: P ()
 params = 
   do
     a <- defType
     b <- idToken
     c <- params'
-    return(a++[b]++c)
+    return ()
+    -- return(a++[b]++c)
   <|>
-    return []
+    return ()
 
--- Params' → ',' Type Id Params' | ε
-params' :: P [Token]
+-- [TO-DO] Params' → ',' Type Id Params' | ε
+params' :: P ()
 params' = 
   do
     a <- punc_commaToken
     b <- defType
     c <- idToken
     d <- params'
-    return([a]++b++[c]++d)
+    return ()
+    -- return([a]++b++[c]++d)
   <|>
-    return []
+    return ()
 
 -- Type → PrimType | StructType
-defType :: P [Token]
+defType :: P IMType
 defType =
   do
     a <- primType
-    return ([a])
+    return a
   <|>
   do
     b <- structType
-    return (b)
+    return b
 
 -- PrimType → 'int' | 'bool' | 'float' | 'string' | 'u8' | 'complex' | 'kernel' | 'image' | 'signal'
-primType :: P Token
+primType :: P IMType
 primType =
   do
-    a <- kw_intToken
-    return (a)
+    _ <- kw_intToken
+    return TInt
   <|>
   do
-    a <- kw_boolToken
-    return (a)
+    _ <- kw_boolToken
+    return TBool
   <|>
   do
-    a <- kw_floatToken
-    return (a)
+    _ <- kw_floatToken
+    return TFloat
   <|>
   do
-    a <- kw_stringToken
-    return (a)
+    _ <- kw_stringToken
+    return TString
   <|>
   do
-    a <- kw_u8Token
-    return (a)
+    _ <- kw_u8Token
+    return TU8
   <|>
   do
-    a <- kw_complexToken
-    return (a)
+    _ <- kw_complexToken
+    return TComplex
   <|>
   do
-    a <- kw_kernelToken
-    return (a)
+    _ <- kw_kernelToken
+    return TKernel
   <|>
   do
-    a <- kw_imageToken
-    return (a)
+    _ <- kw_imageToken
+    return TImage
   <|>
   do
-    a <- kw_signalToken
-    return (a)
+    _ <- kw_signalToken
+    return TSignal
 
 
 -- StructType → 'list' '<' Type '>' | 'matrix' '<' PrimType '>'
-structType :: P [Token]
+structType :: P IMType
 structType = 
   do
-    a <- kw_listToken
-    b <- op_lesserToken
+    _ <- kw_listToken
+    _ <- op_lesserToken
     c <- defType
-    d <- op_greaterToken
-    return ([a]++[b]++c++[d])
+    _ <- op_greaterToken
+    return (TList c)
   <|>
   do
-    a <- kw_matrixToken
-    b <- op_lesserToken
+    _ <- kw_matrixToken
+    _ <- op_lesserToken
     c <- primType
-    d <- op_greaterToken
-    return ([a,b,c,d])
+    _ <- op_greaterToken
+    return (TMatrix c)
 
 -- Stmts → St Stmts | ε
-stmts :: P [Token]
+stmts :: P ()
 stmts = 
   do
     a <- st 
-    b <- stmts 
-    return (a++b)
+    b <- stmts
+    return ()
+    -- return (a++b)
   <|>
-    return []
+    return ()
 
 -- St → SimpleStmt ';' | BlockStmt
-st :: P [Token]
+st :: P ()
 st =
   do
     a <- simpleStmt
     b <- punc_semicolonToken
-    return(a++[b])
+    return ()
+    -- return(a++[b])
   <|>
   do
     a <- blockStmt
-    return(a)
+    return ()
+    -- return(a)
 
 -- SimpleStmt → DeclStmt | Id StTail | PrintStmt | GetStmt
-simpleStmt :: P [Token]
+simpleStmt :: P ()
 simpleStmt = 
-  do
-    a <- declStmt
-    return(a)
+  declStmt
   <|>
   do
+    pos <- getPosition
     a <- idToken
-    b <- stTail
-    return([a]++b)
+    stTail pos (idName a)
   <|>
   do
-    a <- printStmt
-    return(a)
+    printStmt
   <|>
   do
-    a <- getStmt
-    return(a)
+    getStmt
 
--- Block Stmt → CondStmt | WhileStmt | ForStmt
-blockStmt :: P [Token]
+-- [TO-DO] Block Stmt → CondStmt | WhileStmt | ForStmt
+blockStmt :: P ()
 blockStmt =
   do
+    pos <- getPosition
     a <- condStmt
-    return(a)
+    throwError pos ("CondStmt ainda n implementado")
+    -- return(a)
   <|>
   do
+    pos <- getPosition
     a <- whileStmt
-    return(a)
+    throwError pos ("WhileStmt ainda n implementado")
+    -- return(a)
   <|>
   do
+    pos <- getPosition
     a <- forStmt
-    return(a)
+    throwError pos ("ForStmt ainda n implementado")
+    -- return(a)
 
--- StTail → AttrStmt | '[' Expr ']' StTail' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε
-stTail :: P [Token]
-stTail = 
+-- [TO-DO] StTail → AttrStmt | '[' Expr ']' StTail' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε
+stTail :: SourcePos -> String -> P ()
+stTail pos name = 
   do
     a <- attrStmt
-    return (a)
+    (typ, _) <- symbtable_lookup pos name
+    b <- coerce pos typ a
+    symbtable_update pos name b 
   <|>
   do
     a <- punc_lbracketToken
-    b <- expr
-    c <- punc_rbracketToken
-    d <- stTail'
-    return([a]++b++[c]++d)
+    throwError pos ("[Expr] de StTail ainda n implementado")
+    -- b <- expr
+    -- c <- punc_rbracketToken
+    -- d <- stTail'
+    -- return([a]++b++[c]++d)
   <|>
   do
     a <- punc_lparenToken
-    b <- listExpr
-    c <- punc_rparenToken
-    return([a]++b++[c])
+    throwError pos ("(ListExpr) de StTail ainda n implementado")
+    -- b <- listExpr
+    -- c <- punc_rparenToken
+    -- return([a]++b++[c])
   <|>
   do
     a <- punc_dotToken
-    b <- idToken
-    c <- punc_lparenToken
-    d <- listExpr
-    e <- punc_rparenToken
-    return([a,b,c]++d++[e])
+    throwError pos (".Id(ListExpr) de StTail ainda n implementado")
+    -- b <- idToken
+    -- c <- punc_lparenToken
+    -- d <- listExpr
+    -- e <- punc_rparenToken
+    -- return([a,b,c]++d++[e])
   <|>
-    return []
+    return ()
     
--- StTail' → AttrStmt | '.' Id '(' ListExpr ')'
-stTail' :: P [Token]
+-- [TO-DO] StTail' → AttrStmt | '.' Id '(' ListExpr ')'
+stTail' :: P ()
 stTail' = 
   do
     a <- attrStmt
-    return (a)
+    return ()
+    -- return (a)
   <|>
   do
     a <- punc_dotToken
@@ -589,10 +612,11 @@ stTail' =
     c <- punc_lparenToken
     d <- listExpr
     e <- punc_rparenToken
-    return ([a,b,c]++d++[e])
+    return ()
+    -- return ([a,b,c]++d++[e])
 
--- CondStmt → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'
-condStmt :: P [Token]
+-- [TO-DO] CondStmt → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'
+condStmt :: P ()
 condStmt = do
   a <- kw_ifToken
   b <- punc_lbraceToken
@@ -603,20 +627,22 @@ condStmt = do
   g <- punc_rparenToken
   h <- elseStmt
   i <- kw_endifToken
-  return([a,b]++c++[d,e]++f++[g]++h++[i])
+  return ()
+  -- return([a,b]++c++[d,e]++f++[g]++h++[i])
 
--- ElseStmt → 'else' ElseStmt' | ε
-elseStmt :: P [Token] 
+-- [TO-DO] ElseStmt → 'else' ElseStmt' | ε
+elseStmt :: P () 
 elseStmt =
   do
     a <- kw_elseToken
     b <- elseStmt'
-    return([a]++b)
+    return ()
+    -- return([a]++b)
   <|>
-    return []
+    return ()
 
--- ElseStmt' → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt | '(' Stmts ')'
-elseStmt' :: P [Token]
+-- [TO-DO] ElseStmt' → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt | '(' Stmts ')'
+elseStmt' :: P ()
 elseStmt' = 
   do
     a <- kw_ifToken
@@ -627,36 +653,39 @@ elseStmt' =
     f <- stmts
     g <- punc_rparenToken
     h <- elseStmt
-    return([a,b]++c++[d,e]++f++[g]++h)
+    return ()
+    -- return([a,b]++c++[d,e]++f++[g]++h)
   <|>
   do
     a <- punc_lparenToken
     b <- stmts
     c <- punc_rparenToken
-    return([a]++b++[c])
+    return ()
+    -- return([a]++b++[c])
 
 -- PrintStmt → 'shout' '{' Expr '}'
-printStmt :: P [Token]
+printStmt :: P ()
 printStmt = 
   do
     a <- kw_shoutToken
     b <- punc_lbraceToken
     c <- expr
     d <- punc_rbraceToken
-    return ([a]++[b]++c++[d])
+    liftIO (putStrLn (showValue c))
 
--- GetStmt → 'get' '{' Var VarList '}'
-getStmt :: P [Token]
+-- [TO-DO] GetStmt → 'get' '{' Var VarList '}'
+getStmt :: P ()
 getStmt = do
   a <- kw_getToken
   b <- punc_lbraceToken
   c <- var
   d <- varList
   e <- punc_rbraceToken
-  return ([a]++[b]++c++d++[e])
+  return ()
+  -- return ([a]++[b]++c++d++[e])
 
--- WhileStmt → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
-whileStmt :: P [Token]
+-- [TO-DO] WhileStmt → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
+whileStmt :: P ()
 whileStmt = do
   a <- kw_untilToken
   b <- punc_lbraceToken
@@ -666,31 +695,35 @@ whileStmt = do
   f <- punc_lparenToken
   g <- stmts
   h <- punc_rparenToken
-  return([a,b]++c++[d,e,f]++g++[h])
+  return ()
+  -- return([a,b]++c++[d,e,f]++g++[h])
 
--- ForStmt → 'for' '{' ForStmt'
-forStmt :: P [Token]
+-- [TO-DO] ForStmt → 'for' '{' ForStmt'
+forStmt :: P ()
 forStmt = do
   a <- kw_forToken
   b <- punc_lbraceToken
   c <- forStmt'
-  return ([a,b]++c)
+  return ()
+  -- return ([a,b]++c)
 
--- ForStmt' → Id ForDistinguish | DeclStmt ForRegular
-forStmt' :: P [Token]
+-- [TO-DO] ForStmt' → Id ForDistinguish | DeclStmt ForRegular
+forStmt' :: P ()
 forStmt' = 
   do
     a <- idToken
     b <- forDistinguish
-    return([a]++b)
+    return ()
+    -- return([a]++b)
   <|>
   do
     a <- singleDecl
     b <- forRegular
-    return (a++b)
+    return ()
+    -- return (a++b)
 
--- ForDistinguish → '->' Expr '}' '(' Stmts ')' | Var DeclStmt' ForRegular
-forDistinguish :: P [Token]
+-- [TO-DO] ForDistinguish → '->' Expr '}' '(' Stmts ')' | Var DeclStmt' ForRegular
+forDistinguish :: P ()
 forDistinguish = 
   do
     a <- op_iteratorToken
@@ -699,16 +732,18 @@ forDistinguish =
     d <- punc_lparenToken
     e <- stmts
     f <- punc_rparenToken
-    return ([a]++b++[c,d]++e++[f])
+    return ()
+    -- return ([a]++b++[c,d]++e++[f])
   <|>
   do
     a <- var
     b <- declStmt'
     c <- forRegular
-    return (a++b++c)
+    return ()
+    -- return (a++b++c)
 
--- ForRegular → ',' Expr ',' Var AttrStmt '}' '(' Stmts ')'
-forRegular :: P [Token]
+-- [TO-DO] ForRegular → ',' Expr ',' Var AttrStmt '}' '(' Stmts ')'
+forRegular :: P ()
 forRegular = do
   a <- punc_commaToken
   b <- expr
@@ -719,306 +754,348 @@ forRegular = do
   g <- punc_lparenToken
   h <- stmts
   i <- punc_rparenToken
-  return ([a]++b++[c]++d++e++[f,g]++h++[i])
+  return ()
+  -- return ([a]++b++[c]++d++e++[f,g]++h++[i])
 
 -- AttrStmt → '<-' Expr
-attrStmt :: P [Token]
+attrStmt :: P IMValue
 attrStmt =
   do
-    a <- op_assignToken
+    _ <- op_assignToken
     b <- expr
-    return([a]++b)
+    return b
 
 -- DeclStmt → SingleDecl DeclList
-declStmt :: P [Token]
+declStmt :: P ()
 declStmt = do
-  a <- singleDecl
-  b <- declList
-  return (a++b)
+  typ <- singleDecl
+  b <- declList typ
+  return b
 
 -- SingleDecl → Type Id DeclStmt'
-singleDecl :: P [Token]
+singleDecl :: P IMType
 singleDecl = do
-  a <- defType
-  b <- idToken
+  typ <- defType
+  pos <- getPosition
+  name <- idToken
   c <- declStmt'
-  return(a++[b]++c)
+  val <- case c of 
+    Nothing -> get_default_value pos typ
+    Just v -> coerce pos typ v
+
+  symbtable_insert pos (idName name) typ val
+
+  return typ
 
 -- DeclList → ',' Id DeclStmt' DeclList | ε
-declList :: P [Token]
-declList =
+declList :: IMType -> P ()
+declList typ =
   do
-    a <- punc_commaToken
-    b <- idToken
+    _ <- punc_commaToken
+    pos <- getPosition
+    name <- idToken
     c <- declStmt'
-    d <- declList
-    return([a,b]++c++d)
+    val <- case c of 
+      Nothing -> get_default_value pos typ
+      Just v -> coerce pos typ v
+
+    symbtable_insert pos (idName name) typ val 
+
+    d <- declList typ
+    return d
   <|>
-    return []
+    return ()
 
 -- DeclStmt' → AttrStmt | ε
-declStmt' :: P [Token]
+declStmt' :: P (Maybe IMValue) 
 declStmt' = 
   do
     a <- attrStmt
-    return (a)
+    return (Just a)
   <|>
   do
-    return []
+    return Nothing
 
--- Var → Id Var'
-var :: P [Token]
+-- [TO-DO] Var → Id Var'
+var :: P ()
 var = do
   a <- idToken
   b <- var'
-  return([a]++b)
+  return ()
+  -- return([a]++b)
 
--- Var' → '[' Expr ']' | ε
-var' :: P [Token]
+-- [TO-DO] Var' → '[' Expr ']' | ε
+var' :: P ()
 var' = 
   do
     a <- punc_lbracketToken
     b <- expr
     c <- punc_rbracketToken
-    return([a]++b++[c])
+    return ()
+    -- return([a]++b++[c])
   <|>
-    return []
+    return ()
 
--- VarList → ',' Var VarList | ε
-varList :: P [Token]
+-- [TO-DO] VarList → ',' Var VarList | ε
+varList :: P ()
 varList = 
   do
     a <- punc_commaToken
     b <- var
     c <- varList
-    return([a]++b++c)
+    return ()
+    -- return([a]++b++c)
   <|>
-    return []
+    return ()
 
 -- Expr → ExprOr
-expr :: P [Token]
+expr :: P IMValue
 expr = exprOr
 
 -- ExprOr → ExprAnd ExprOr'
-exprOr :: P [Token]
+exprOr :: P IMValue
 exprOr = do
   a <- exprAnd
-  b <- exprOr'
+  b <- exprOr' a
 
-  return(a++b)
+  return b
 
 -- ExprOr' → '||' ExprAnd ExprOr' | ε
-exprOr' :: P [Token]
-exprOr' = 
+exprOr' :: IMValue -> P IMValue
+exprOr' esq = 
   do
+    pos <- getPosition
     a <- op_orToken
     b <- exprAnd 
-    c <- exprOr'
-    return ([a]++b++c)
+    c <- logical pos "||" (||) esq b
+    d <- exprOr' c
+    return d
   <|>
-    return []
+    return esq
 
 -- ExprAnd → ExprNot ExprAnd'
-exprAnd :: P [Token]
+exprAnd :: P IMValue
 exprAnd = do
   a <- exprNot
-  b <- exprAnd'
+  b <- exprAnd' a
   
-  return(a++b)
+  return b
 
 -- ExprAnd' → '&&' ExprNot ExprAnd' | ε
-exprAnd' :: P [Token]
-exprAnd' = 
+exprAnd' :: IMValue -> P IMValue
+exprAnd' esq = 
   do
+    pos <- getPosition
     a <- op_andToken
     b <- exprNot
-    c <- exprAnd'
-    return ([a]++b++c)
+    c <- logical pos "&&" (&&) esq b
+    d <- exprAnd' c
+    return d
   <|>
-    return []
+    return esq
 
 -- ExprNot  → '!' ExprNot | ExprRel
-exprNot :: P [Token]
+exprNot :: P IMValue
 exprNot = 
   do
+    pos <- getPosition
     a <- op_notToken
     b <- exprNot
-    return (a:b)
+    case b of 
+      VBool v -> return (VBool (not v))
+      _ -> throwError pos ("!(not) exige booleano: " ++ showValue b)
   <|>
   do
     a <- exprRel
-    return (a)
+    return a
 
 -- ExprRel → ExprAdd ExprRel'
-exprRel :: P [Token]
+exprRel :: P IMValue
 exprRel = do
   a <- exprAdd
-  b <- exprRel' 
+  b <- exprRel' a
 
-  return(a++b)
+  return b
 
 -- ExprRel' → Op ExprAdd | ε
-exprRel' :: P [Token]
-exprRel' = 
+exprRel' :: IMValue -> P IMValue
+exprRel' esq = 
   do
+    pos <- getPosition
     a <- op
     b <- exprAdd
-    return(a:b)
+    c <- compareVals pos a esq b
+    return c
   <|>
-    return []
+    return esq
 
 -- ExprAdd → ExprMul ExprAdd'
-exprAdd :: P [Token]
+exprAdd :: P IMValue
 exprAdd = do
   a <- exprMul
-  b <- exprAdd'
+  b <- exprAdd' a
   
-  return(a++b)
+  return b
 
 -- ExprAdd' → '+' ExprMul ExprAdd' | '-' ExprMul ExprAdd' | ε
-exprAdd' :: P [Token]
-exprAdd' = 
+exprAdd' :: IMValue -> P IMValue
+exprAdd' esq = 
   do
+    pos <- getPosition
     a <- op_plusToken
     b <- exprMul
-    c <- exprAdd'
-    return([a]++b++c)
+    c <- arithmetic pos "+" (+) (+) esq b
+    d <- exprAdd' c
+    return d
   <|>
   do
+    pos <- getPosition
     a <- op_minusToken
     b <- exprMul
-    c <- exprAdd'
-    return([a]++b++c)
+    c <- arithmetic pos "-" (-) (-) esq b
+    d <- exprAdd' c
+    return d
   <|>
-    return []
+    return esq
 
 -- ExprMul → ExprPrim ExprMul'
-exprMul :: P [Token]
+exprMul :: P IMValue
 exprMul = do
   a <- exprPrim
-  b <- exprMul'
+  b <- exprMul' a
 
-  return (a++b)
+  return b
 
 -- ExprMul' → '*' ExprPrim ExprMul' | '/' ExprPrim ExprMul' | ε
-exprMul' :: P [Token]
-exprMul' = 
+exprMul' :: IMValue -> P IMValue
+exprMul' esq = 
   do
+    pos <- getPosition
     a <- op_asteriskToken
     b <- exprPrim
-    c <- exprMul'
-    return([a]++b++c)
+    c <- arithmetic pos "*" (*) (*) esq b
+    d <- exprMul' c
+    return d
   <|>
   do
+    pos <- getPosition
     a <- op_slashToken
     b <- exprPrim
-    c <- exprMul'
-    return([a]++b++c)
+    c <- divide pos esq b
+    d <- exprMul' c
+    return d
   <|>
-    return []
+    return esq
 
 -- ExprPrim → '(' Expr ')' | '[' ListTail | Id ExprPrim' | 'true' | 'false' | Int | Float | String
-exprPrim :: P [Token]
+exprPrim :: P IMValue
 exprPrim = 
   do
     a <- punc_lparenToken
     b <- expr
     c <- punc_rparenToken
-    return([a]++b++[c])
+    return b
   <|>
   do
     a <- punc_lbracketToken
     b <- listTail
-    return(a:b)
+    return b
   <|>
   do
+    pos <- getPosition
     a <- idToken
-    b <- exprPrim'
-    return([a]++b)
+    b <- exprPrim' pos (idName a)
+    return b
   <|>
   do
     a <- kw_trueToken
-    return([a])
+    return (VBool True)
   <|>
   do
     a <- kw_falseToken
-    return([a])
+    return(VBool False)
   <|>
   do
-    a <- intToken
-    return([a])
+    Token _ (Int n) <- intToken
+    return (VInt n)
   <|>
   do
-    a <- floatToken
-    return([a])
+    Token _ (Float f) <- floatToken
+    return (VFloat f)
   <|>
   do
-    a <- stringToken
-    return([a])
+    Token _ (String s) <- stringToken
+    return (VString s)
 
 -- ExprPrim' → '[' Expr ']' | '(' ListExpr ')' ExprPrim' | '.' Id ExprPrim' | ε
-exprPrim' :: P [Token]
-exprPrim' = 
+exprPrim' :: SourcePos -> String -> P IMValue
+exprPrim' pos name = 
   do
     a <- punc_lbracketToken
-    b <- expr
-    c <- punc_rbracketToken
-    return ([a]++b++[c])
+    -- b <- expr
+    -- c <- punc_rbracketToken
+    -- return ([a]++b++[c])
+    throwError pos ("Kkkkkkkk ainda n implementamos ExpPrim' -> [Expr]")
   <|>
   do
     a <- punc_lparenToken
-    b <- listExpr
-    c <- punc_rparenToken
-    d <- exprPrim'
-    return ([a]++b++[c]++d)
+    -- b <- listExpr
+    -- c <- punc_rparenToken
+    -- d <- exprPrim'
+    -- return ([a]++b++[c]++d)
+    throwError pos ("Kkkkkkkk ainda n implementamos ExpPrim' -> (ListExpr) ExprPrim'")
   <|>
   do
     a <- punc_dotToken
-    b <- idToken
-    c <- exprPrim'
-    return ([a]++[b]++c)
+    -- b <- idToken
+    -- c <- exprPrim'
+    -- return ([a]++[b]++c)
+    throwError pos ("Kkkkkkkk ainda n implementamos ExpPrim' -> .Id ExprPrim'")
   <|>
   do
-    return ([])
+    (typ, val) <- symbtable_lookup pos name
+    return val
 
 -- ListExpr → Expr ListExpr' | ε
-listExpr :: P [Token]
+listExpr :: P [IMValue]
 listExpr = 
   do
     a <- expr
     b <- listExpr'
-    return (a++b)
+    return ([a]++b)
   <|>
-  do
-    return ([])
+    return []
 
 -- ListExpr' → ',' ListExpr | ε
-listExpr' :: P [Token]
+listExpr' :: P [IMValue]
 listExpr' = 
   do
     a <- punc_commaToken
     b <- listExpr
-    return ([a]++b)
+    return b
   <|>
-  do
-    return([])
+    return []
 
 -- ListTail → Id '->' Expr '|' Expr ']' | ListExpr ']'
-listTail :: P [Token]
+listTail :: P IMValue
 listTail = 
-  do
-    a <- idToken
-    b <- op_iteratorToken
-    c <- expr
-    d <- op_comprehensionToken
-    e <- expr
-    f <- punc_rbracketToken
-    return ([a,b]++c++[d]++e++[f])
+  try
+    (do
+      pos <- getPosition
+      a <- idToken
+      b <- op_iteratorToken
+      throwError pos ("ainda n implementamos ListTail -> Id '->' Expr")
+      -- c <- expr
+      -- d <- op_comprehensionToken
+      -- e <- expr
+      -- f <- punc_rbracketToken
+      -- return ([a,b]++c++[d]++e++[f])
+    )
   <|>
   do
     a <- listExpr
     b <- punc_rbracketToken
-    return(a++[b])
+    return (VList a)
 
 -- Op → '<=' | '>=' | '<' | '>' | '==' | '!='
 op :: P Token
@@ -1031,25 +1108,191 @@ op = op_leqToken
   
 
 -----------------------------------------------------------------------------
--- FUNÇÕES PARA VERIFICAÇÃO DE TIPOS
+-- FUNÇÕES AUXILIARES E AFINS
 -----------------------------------------------------------------------------
----
 
----
+idName :: Token -> String
+idName (Token _ (Id s)) = s
+idName t = show t
+
+typeName :: IMType -> String
+typeName tn = case tn of
+  TInt -> "int"
+  TBool -> "bool"
+  TFloat -> "float"
+  TString -> "string"
+  TU8 -> "u8"
+  TComplex -> "complex"
+  TKernel -> "kernel"
+  TImage -> "image"
+  TSignal -> "signal"
+  TList t -> "list<" ++ typeName t ++ ">"
+  TMatrix t -> "matrix<" ++ typeName t ++ ">"
+
+showValue :: IMValue -> String
+showValue (VInt n) = show n 
+showValue (VFloat f) = show f
+showValue (VBool b) = if b then "true" else "false"
+showValue (VString s) = s
+showValue (VList vals) = "[" ++ intercalate ", " (map showValue vals) ++ "]"
+
+throwError :: SourcePos -> String -> P e
+throwError pos msg = liftIO (die ("[ERRO SEMÂNTICO (?)] na linha " ++ show (sourceLine pos) ++ ", coluna " ++ show (sourceColumn pos) ++ ": " ++ msg))
 
 
-parser :: [Token] -> IO (Either ParseError [Token])
-parser tokens = runParserT defProgram [] "🚨 Erro sintático !!!" tokens
+-- TABELA DE SÍMBOLOS
+symbtable_insert :: SourcePos -> String -> IMType -> IMValue -> P () -- n retorna valor
+symbtable_insert pos var typ val = do -- na posição pos...
+  st <- getState
+  case scopes st of
+    (head:tail)
+      | Map.member var head ->  throwError pos ("'" ++ var ++ "' ja declarada neste escopo!!!" ) -- n deu certo...
+      | otherwise -> putState st {scopes = Map.insert var (typ, val) head:tail} -- ... insira var com tipo typ e valor val
+    [] -> throwError pos ("pilha de escopos vazia") -- 
+
+symbtable_update :: SourcePos -> String -> IMValue -> P () -- n retorna valor
+symbtable_update pos var val = do -- na posição pos...
+  st <- getState
+  newScopes <- update (scopes st)
+  putState st {scopes = newScopes}
+  where
+    update [] = throwError pos ("'" ++ var ++ "' n declarada" ) -- n deu certo...
+    update (sc : tail) =
+      case Map.lookup var sc of
+        Just (typ, _) -> return (Map.insert var (typ, val) sc:tail) -- ... atualize o valor de var para val, o tipo continua
+        Nothing -> do
+          tail' <- update tail
+          return (sc : tail')
+          
+symbtable_remove :: SourcePos -> String -> P () -- n retorna valor
+symbtable_remove pos var = do -- na posição pos...
+  st <- getState
+  newScopes <- remove (scopes st)
+  putState st {scopes = newScopes}
+  where
+    remove [] = throwError pos ("'" ++ var ++ "' n declarada" ) -- n deu certo...
+    remove (sc : tail) =
+      case Map.lookup var sc of
+        Just _ -> return (Map.delete var sc:tail) --  -- ... apague var !
+        Nothing -> do
+          tail' <- remove tail
+          return (sc : tail')
+
+symbtable_lookup :: SourcePos -> String -> P (IMType, IMValue) -- retorno typ val
+symbtable_lookup pos var = do -- na posição pos...
+  st <- getState
+  search (scopes st)
+  where 
+    search [] = throwError pos ("'" ++ var ++ "' n declarada" ) -- n deu certo...
+    search (sc : tail) =
+      case Map.lookup var sc of
+        Just (typ, val) -> return (typ, val) -- ...me dê o tipo typ e o valor val de var
+        Nothing -> search tail
+
+-- AVALIAÇÃO E VERIFICAÇÃO
+
+get_default_value :: SourcePos -> IMType -> P IMValue
+get_default_value _ TInt = return (VInt 0)
+get_default_value _ TU8 = return (VInt 0)
+get_default_value _ TFloat = return (VFloat 0.0)
+get_default_value _ TBool = return (VBool False)
+get_default_value _ TString = return (VString "")
+get_default_value _ (TList _) = return (VList [])
+get_default_value pos t = throwError pos ("tipo " ++ typeName t ++ " n implementado (ainda!)")
+         
+compatible :: IMType -> IMValue -> Bool
+compatible TInt (VInt _) = True
+compatible TFloat (VFloat _) = True
+
+compatible TInt (VFloat _) = True -- float p int trunca
+compatible TFloat (VInt _) = True -- int p float transforma em FLOAT
+compatible TU8 (VInt _) = True 
+compatible TU8 (VFloat _) = True -- float p u8 trunca
+-- teremos compatibilidade entre inteiros e booleanos?
+-- compatible TInt (VBool _) = True
+-- compatible TBool (VInt _) = True
+compatible TBool (VBool _) = True
+compatible TString (VString _) = True
+compatible _ _ = False
+
+convert :: IMType -> IMValue -> IMValue
+convert TInt (VFloat f) = VInt (truncate f)
+convert TU8 (VFloat f) = VInt (truncate f)
+convert TFloat (VInt n) = VFloat (fromIntegral n)
+convert _ v = v
+
+-- isso aq eh mais pra U8 
+checkRange :: SourcePos -> IMType -> IMValue -> P IMValue
+checkRange pos TU8 (VInt n)
+  | n < 0 || n > 255 = throwError pos ("valor n=" ++ show n ++ " fora da faixa [0,255]")
+checkRange _ _ v = return v
+
+coerce :: SourcePos -> IMType -> IMValue -> P IMValue
+coerce pos typ val
+  | not (compatible typ val) = throwError pos ("valor " ++ showValue val ++ " incompativel com tipo " ++ typeName typ)
+  | otherwise = checkRange pos typ (convert typ val)
+
+-- OPERAÇÕES !
+-- adiçao subtraçao e multiplicaçao
+-- código fonte -> string do operador -> inteiros -> float caso haja -> operando esquerdo -> operando direito -> resposta !
+-- queria aproveitar o convert no retorno dessa funçao mas nao entendo mto de assinatura das funçoes 
+arithmetic :: SourcePos -> String -> (Int -> Int -> Int) -> (Double -> Double -> Double) -> IMValue -> IMValue -> P IMValue
+arithmetic _ _ opI _ (VInt a) (VInt b) = return (VInt (opI a b))
+arithmetic _ _ _ opF (VFloat a) (VFloat b) = return (VFloat (opF a b))
+arithmetic _ _ _ opF (VInt a) (VFloat b) = return (VFloat (opF (fromIntegral a) b))
+arithmetic _ _ _ opF (VFloat a) (VInt b) = return (VFloat (opF a (fromIntegral b)))
+arithmetic pos op _ _ a b = throwError pos ("operandos incompativeis na operacao " ++ op ++ " ---> "  ++ showValue a ++ " e " ++ showValue b)
+
+--contudo temos a divisao por zero 
+divide :: SourcePos -> IMValue -> IMValue -> P IMValue
+divide pos _ (VInt 0) = throwError pos ("divisao por zero")
+divide pos _ (VFloat 0.0) = throwError pos ("divisao por zero")
+-- return pos, char da divisao, caso inteiro a operaçao eh div, caso float eh /, operando a e operando b
+divide pos a b = arithmetic pos "/" div (/) a b
+
+-- ops booleanas
+logical :: SourcePos -> String -> (Bool -> Bool -> Bool) -> IMValue -> IMValue -> P IMValue
+logical _ _ opL (VBool a) (VBool b) = return (VBool (opL a b))
+logical pos op _ a b = throwError pos (op ++ " espera bool, recebeu " ++ showValue a ++ " e " ++ showValue b)
+
+-- COMPARAÇÕES !
+compareVals :: SourcePos -> Token -> IMValue -> IMValue -> P IMValue
+compareVals pos (Token _ opTkn) a b = do
+  order <- case (a, b) of -- comparando os valores 
+    (VInt x, VInt y) -> return (compare x y)
+    (VFloat x, VFloat y) -> return (compare x y)
+    (VInt x, VFloat y) -> return (compare (fromIntegral x) y)
+    (VFloat x, VInt y) -> return (compare x (fromIntegral y))
+    (VString x, VString y) -> return (compare x y)
+    (VBool x, VBool y) 
+      | opTkn == OP_EQ || opTkn == OP_NEQ -> return (compare x y)
+    _ -> throwError pos ("comparacao entr valores incompativeis: " ++ showValue a ++ " e " ++ showValue b)
+  
+  return (VBool (case opTkn of
+    OP_LESSER -> order == LT
+    OP_GREATER -> order == GT
+    OP_LEQ -> order /= GT
+    OP_GEQ -> order /= LT
+    OP_EQ -> order == EQ
+    OP_NEQ -> order /= EQ
+    ))
+
+
+-----------------------------------------------------------------------------
+
+parser :: String -> [Token] -> IO (Either ParseError ())
+parser fn tokens = runParserT defProgram (IMState [Map.empty]) fn tokens
 
 main :: IO ()
 main = do
+        mapM_ (`hSetEncoding` utf8) [stdin, stdout, stderr] -- só pra printar na codificação 
         args <- getArgs
         case args of 
           [fn] -> do
             tokens <- getTokens fn
-            result <- parser tokens
+            result <- parser fn tokens
             case result of
-            { Left err -> print err; 
-              Right ans -> print ans
+            { Left err -> do {hPutStrLn stderr "🚨 Erro sintático !!!"; print err};
+              Right () -> return () 
             }
           _ -> putStrLn "Please inform the input filename. Closing application..." 
