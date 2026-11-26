@@ -78,8 +78,10 @@ ExprRel'       → Op ExprAdd | ε
 ExprAdd        → ExprMul ExprAdd'
 ExprAdd'       → '+' ExprMul ExprAdd' | '-' ExprMul ExprAdd' | ε
 
-ExprMul        → ExprPrim ExprMul'
-ExprMul'       → '*' ExprPrim ExprMul' | '/' ExprPrim ExprMul' | ε
+ExprMul        → ExprUna ExprMul'
+ExprMul'       → '*' ExprUna ExprMul' | '/' ExprUna ExprMul' | '%' ExprUna ExprMul' | ε
+
+ExprUna        → '-' ExprUna | ExprPrim
 
 ExprPrim       → '(' Expr ')' | '[' ListTail | Id ExprPrim' | 'true' | 'false' | Int | Float | String
 ExprPrim'      → '[' Expr ']' | '(' ListExpr ')' ExprPrim' | '.' Id ExprPrim' | ε

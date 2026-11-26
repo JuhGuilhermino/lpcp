@@ -278,6 +278,10 @@ op_notToken = tokenPrim show update_pos get_token where
   get_token token@(Token _ OP_NOT) = Just token
   get_token _ = Nothing
 
+op_moduloToken :: P Token
+op_moduloToken = tokenPrim show update_pos get_token where
+    get_token token@(Token _ OP_MODULO) = Just token
+    get_token _ = Nothing
 
 -- pontuacao
 punc_lparenToken :: P Token
@@ -958,21 +962,21 @@ exprAdd' esq =
   <|>
     return esq
 
--- ExprMul → ExprPrim ExprMul'
+-- ExprMul → ExprUna ExprMul'
 exprMul :: P IMValue
 exprMul = do
-  a <- exprPrim
+  a <- exprUna
   b <- exprMul' a
 
   return b
 
--- ExprMul' → '*' ExprPrim ExprMul' | '/' ExprPrim ExprMul' | ε
+-- ExprMul' → '*' ExprUna ExprMul' | '/' ExprUna ExprMul' | '%' ExprUna ExprMul' | ε
 exprMul' :: IMValue -> P IMValue
 exprMul' esq = 
   do
     pos <- getPosition
     a <- op_asteriskToken
-    b <- exprPrim
+    b <- exprUna
     c <- arithmetic pos "*" (*) (*) esq b
     d <- exprMul' c
     return d
@@ -980,12 +984,34 @@ exprMul' esq =
   do
     pos <- getPosition
     a <- op_slashToken
-    b <- exprPrim
+    b <- exprUna
     c <- divide pos esq b
     d <- exprMul' c
     return d
   <|>
+  do
+    pos <- getPosition
+    a <- op_moduloToken
+    b <- exprUna
+    c <- modulo pos esq b
+    d <- exprMul' c
+    return d
+  <|>
     return esq
+
+-- ExprUna → '-' ExprUna | ExprPrim
+exprUna :: P IMValue
+exprUna = 
+  do
+    pos <- getPosition
+    a <- op_minusToken
+    b <- exprUna
+    c <- unaryNegative pos b 
+    return c
+  <|>
+  do 
+    a <- exprPrim
+    return a
 
 -- ExprPrim → '(' Expr ')' | '[' ListTail | Id ExprPrim' | 'true' | 'false' | Int | Float | String
 exprPrim :: P IMValue
@@ -1249,6 +1275,18 @@ divide pos _ (VInt 0) = throwError pos ("divisao por zero")
 divide pos _ (VFloat 0.0) = throwError pos ("divisao por zero")
 -- return pos, char da divisao, caso inteiro a operaçao eh div, caso float eh /, operando a e operando b
 divide pos a b = arithmetic pos "/" div (/) a b
+
+-- modulo !
+modulo :: SourcePos -> IMValue -> IMValue -> P IMValue
+modulo pos _ (VInt 0) = throwError pos ("erro !! modulo zero")
+modulo _ (VInt a) (VInt b) = return (VInt (a `mod` b))
+modulo pos a b = throwError pos ("% espera inteiros, recebeu " ++ showValue a ++ " e " ++ showValue b)
+
+-- op unaria de valor negativo
+unaryNegative :: SourcePos -> IMValue -> P IMValue
+unaryNegative _ (VInt n) = return (VInt (negate n))
+unaryNegative _ (VFloat f) = return (VFloat (negate f))
+unaryNegative pos val = throwError pos ("operaçao unaria '-' espera int/float, recebeu " ++ showValue val)
 
 -- ops booleanas
 logical :: SourcePos -> String -> (Bool -> Bool -> Bool) -> IMValue -> IMValue -> P IMValue
