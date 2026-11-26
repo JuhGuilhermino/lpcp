@@ -3,3 +3,33 @@ COMENTARIO: Se n for um divisor de m, n é o maior divisor comum de n e m.
 COMENTARIO: Se m for um divisor de n, m é o maior divisor comum de n e m.
 COMENTARIO: Se n não for um divisor de m, e se m for maior que n, então o maior divisor comum de m e n é também o maior divisor comum de n e do resto da divisão de m por n.
 COMENTARIO: O subprograma deve retornar seu resultado por meio de parâmetro r, que deve ser posteriormente impresso na tela pelo programa principal.
+
+// TODO: definir operador para passar por referencia
+
+function mdc {int n, int m, int $r} (
+
+    if {n % m == 0} (
+        n = mdc{n,m};
+    )
+    if {m % n == 0} {
+        m = mdc{n,m};
+    }
+    else if {m > n} {
+        return mdc{n, m%n, r};
+    }
+)
+
+main {} (
+
+    int n, m, r;
+
+    get{n};
+    get{m};
+    get{r};
+
+    int result = mdc{n, m, r};
+
+    shout{result}
+
+
+)

@@ -93,6 +93,8 @@ tokens :-
     "&&"                                      {\p s -> Token p OP_AND}
     "||"                                      {\p s -> Token p OP_OR}
     "!"                                       {\p s -> Token p OP_NOT}    
+    "%"                                       {\p s -> Token p OP_MODULO}
+    "&"                                       {\p s -> Token p OP_REFERENCE}
 --pontuacao
     "("                                        {\p s -> Token p PUNC_LPAREN}
     ")"                                        {\p s -> Token p PUNC_RPAREN}
@@ -166,6 +168,8 @@ data TokenClass =
   OP_AND |
   OP_OR |
   OP_NOT |
+  OP_MODULO |
+  OP_REFERENCE |
 --pontuacao
   PUNC_LPAREN | 
   PUNC_RPAREN |

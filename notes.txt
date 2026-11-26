@@ -1,0 +1,16 @@
+numero de lonhas e deslocamento pode identificar quantas variaveis
+no entanto na parte de bloco nao ajuda muito nao
+
+guardar deslocamento e bloco
+
+solucao para matar as variaveis
+lista de variaveis para aquele bloco
+
+
+how tf r we doin functions
+
+porque tipo
+
+busca por referencia - associar as chaves
+
+ligado ou nao ligado - executo ou faco analise
