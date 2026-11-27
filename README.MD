@@ -1,37 +1,36 @@
-Este repositório refere-se à implementação da linguagem _wonawfa_, desenvolvida ao longo da matéria de _Linguagens de Programação: Conceitos e Paradigmas_.
+### Este repositório refere-se à implementação da linguagem _Imagine_, desenvolvida ao longo da matéria de _Linguagens de Programação: Conceitos e Paradigmas_.
 
-Autores: Alexandre Ribeiro, Carolina Nunes, Julia Guilhermino, Mariana Emerenciano
-
-oiiiiiiiiiiiiiiiiiiiiiiii
+_*Autores:* Alexandre Ribeiro, Carolina Nunes, Julia Guilhermino, Mariana Emerenciano_
 
 # Dependências
 - Linguagem de programação: Haskell
 - Analisador léxico: Alex
 - Analisador sintático: Parsec
+- Packages do haskell: Data, Containers
 
-# Como criar o analisador léxico (Alex)
-1 - Defina o arquivo  'scanner.x': São as configurações do analisador léxico. \
-2 - Execute o comando abaixo para executar o Alex sobre esse arquivo. 
+# Compilação
+
+1 - Execute o comando abaixo para chamar o Alex sobre o _"scanner.x"_
 ```
 alex scanner.x
 ```
-
-3 - Isso irá gerar um código Haskell. Execute-o com: 
+2 - Isso gerará um arquivo chamado _"scanner.hs"_. Renomeie-o para _"Scanner.hs"_
+3 - Agora, compile a _file_ com o ghc
 ```
-ghc scanner.hs
+ghc Scanner.hs
 ```
 
-4 - [esqueci kkkkkkk]
+4 - Agora, compile o arquivo _"parser.hs"_ com o ghc
 ``` 
-ghc parserV1.hs
+ghc parser.hs
 ```
 
-5 - [esqueci kkkkkk]
+# Execução
+
+5 - Execute o arquivo criado na etapa anterior, acompanhado do _path_ para o programa que deve ser interpretado
 ```
 ./parserV1 programaV1.pe
 ```
-
-# Como 
 
 
 
