@@ -19,8 +19,9 @@ data IMValue = VInt Int | VBool Bool | VFloat Double | VString String | VList [I
   deriving (Eq, Show)
 
 data IMState = IMState{
-  scopes :: [Map.Map String (IMType, IMValue)]
+  scopes :: [Map.Map String (IMType, IMValue)],
   -- buffer :: [String]
+  executing :: Bool -- para executar ou apenas parsear
 }
 
 type P res = ParsecT [Token] IMState IO res
@@ -549,17 +550,9 @@ simpleStmt =
 -- [TO-DO] Block Stmt → CondStmt | WhileStmt | ForStmt
 blockStmt :: P ()
 blockStmt =
-  do
-    pos <- getPosition
-    a <- condStmt
-    throwError pos ("CondStmt ainda n implementado")
-    -- return(a)
+  condStmt
   <|>
-  do
-    pos <- getPosition
-    a <- whileStmt
-    throwError pos ("WhileStmt ainda n implementado")
-    -- return(a)
+  whileStmt
   <|>
   do
     pos <- getPosition
@@ -572,9 +565,11 @@ stTail :: SourcePos -> String -> P ()
 stTail pos name = 
   do
     a <- attrStmt
-    (typ, _) <- symbtable_lookup pos name
-    b <- coerce pos typ a
-    symbtable_update pos name b 
+    ifExec () (do -- so atribui se tiver executing = True
+      (typ, _) <- symbtable_lookup pos name
+      b <- coerce pos typ a
+      symbtable_update pos name b 
+      )  
   <|>
   do
     a <- punc_lbracketToken
@@ -619,53 +614,48 @@ stTail' =
     return ()
     -- return ([a,b,c]++d++[e])
 
--- [TO-DO] CondStmt → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'
+-- CondStmt → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt 'endif'
 condStmt :: P ()
 condStmt = do
   a <- kw_ifToken
   b <- punc_lbraceToken
-  c <- expr
+  pos <- getPosition -- posiçao para caso de erro
+  c <- expr -- valor da condicao
   d <- punc_rbraceToken
-  e <- punc_lparenToken
-  f <- stmts
-  g <- punc_rparenToken
-  h <- elseStmt
-  i <- kw_endifToken
+  exc <- isExec -- "o if esta numa parte do codigo com executing=True?"
+  cond <- if exc then isBool pos c else return False -- se sim, verifica e usa a condiçao, senao falso
+  runBlock (exc && cond) -- se estiver numa parte executavel e a condiçao for verdadeira, executa o bloco do if
+  elseStmt (exc && not cond) -- se o bloco do if nao foi executado propaga para elseStmt
+  e <- kw_endifToken
   return ()
-  -- return([a,b]++c++[d,e]++f++[g]++h++[i])
 
--- [TO-DO] ElseStmt → 'else' ElseStmt' | ε
-elseStmt :: P () 
-elseStmt =
+-- ElseStmt → 'else' ElseStmt' | ε
+elseStmt :: Bool -> P () 
+elseStmt pending =
   do
     a <- kw_elseToken
-    b <- elseStmt'
+    elseStmt' pending -- propaga essa info pros elseifs...else
     return ()
-    -- return([a]++b)
   <|>
     return ()
 
--- [TO-DO] ElseStmt' → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt | '(' Stmts ')'
-elseStmt' :: P ()
-elseStmt' = 
+-- ElseStmt' → 'if' '{' Expr '}' '(' Stmts ')' ElseStmt | '(' Stmts ')'
+elseStmt' :: Bool -> P ()
+elseStmt' pending = 
+  --elseif
   do
     a <- kw_ifToken
     b <- punc_lbraceToken
-    c <- expr
+    pos <- getPosition
+    c <- withExec pending expr -- condiçao avaliada se tiver podendo executar
     d <- punc_rbraceToken
-    e <- punc_lparenToken
-    f <- stmts
-    g <- punc_rparenToken
-    h <- elseStmt
-    return ()
-    -- return([a,b]++c++[d,e]++f++[g]++h)
+    cond <- if pending then isBool pos c else return False -- se tivermos "pendencias" a serem executadas, vamos verificar e usar a condiçao, senao falso
+    runBlock (pending && cond) -- executa o bloco se tiver numa parte executavel e a condiçao for verdadeira
+    elseStmt (pending && not cond) -- senao propaga a info
   <|>
+  --ultimo else
   do
-    a <- punc_lparenToken
-    b <- stmts
-    c <- punc_rparenToken
-    return ()
-    -- return([a]++b++[c])
+    runBlock pending
 
 -- PrintStmt → 'shout' '{' Expr '}'
 printStmt :: P ()
@@ -675,7 +665,7 @@ printStmt =
     b <- punc_lbraceToken
     c <- expr
     d <- punc_rbraceToken
-    liftIO (putStrLn (showValue c))
+    ifExec () (liftIO (putStrLn (showValue c))) -- so imprime se tiver executing=true
 
 -- [TO-DO] GetStmt → 'get' '{' Var VarList '}'
 getStmt :: P ()
@@ -688,19 +678,27 @@ getStmt = do
   return ()
   -- return ([a]++[b]++c++d++[e])
 
--- [TO-DO] WhileStmt → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
+-- WhileStmt → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
 whileStmt :: P ()
 whileStmt = do
   a <- kw_untilToken
-  b <- punc_lbraceToken
-  c <- expr
-  d <- punc_rbraceToken
-  e <- kw_performToken
-  f <- punc_lparenToken
-  g <- stmts
-  h <- punc_rparenToken
-  return ()
-  -- return([a,b]++c++[d,e,f]++g++[h])
+  startInput <- getInput  -- dados do começo de {}
+  startPos <- getPosition -- dados do começo de {}
+  whileLoop startInput startPos
+  where
+    -- cada whileloop eh uma execucao do laço
+    whileLoop startInput startPos = do
+      setInput startInput     -- volta p começo
+      setPosition startPos    -- volta p começo
+      b <- punc_lbraceToken   
+      pos <- getPosition      -- posiçao da condiçao
+      c <- expr               -- reavaliacao da condiçao
+      d <- punc_rbraceToken   
+      e <- kw_performToken
+      exc <- isExec           -- verifica se esta numa parte executavel do codigo
+      stop <- if exc then isBool pos c else return True   -- condiçao foi atingida?
+      runBlock (not stop) -- se nao foi atingida, roda o bloco
+      if stop then return () else whileLoop startInput startPos -- se foi atingida, sai do loop, se nao foi repete o laço
 
 -- [TO-DO] ForStmt → 'for' '{' ForStmt'
 forStmt :: P ()
@@ -783,11 +781,13 @@ singleDecl = do
   pos <- getPosition
   name <- idToken
   c <- declStmt'
-  val <- case c of 
-    Nothing -> get_default_value pos typ
-    Just v -> coerce pos typ v
+  ifExec () (do -- so declara se tiver executing = True
+    val <- case c of 
+      Nothing -> get_default_value pos typ
+      Just v -> coerce pos typ v
 
-  symbtable_insert pos (idName name) typ val
+    symbtable_insert pos (idName name) typ val
+    )
 
   return typ
 
@@ -799,11 +799,13 @@ declList typ =
     pos <- getPosition
     name <- idToken
     c <- declStmt'
-    val <- case c of 
-      Nothing -> get_default_value pos typ
-      Just v -> coerce pos typ v
+    ifExec ()(do -- so declara se tiver executing = True
+      val <- case c of 
+        Nothing -> get_default_value pos typ
+        Just v -> coerce pos typ v
 
-    symbtable_insert pos (idName name) typ val 
+      symbtable_insert pos (idName name) typ val 
+      )
 
     d <- declList typ
     return d
@@ -1316,10 +1318,64 @@ compareVals pos (Token _ opTkn) a b = do
     ))
 
 
+-- EXECUÇÕES E AFINS
+-- p saber se a flag de execuçao esta V ou F
+isExec :: P Bool
+isExec = do
+  st <- getState
+  return (executing st)
+
+-- rodando trecho independente da flag
+withExec :: Bool -> P algo -> P algo
+withExec run action = do
+  st <- getState    
+  let currExecVal = executing st          -- estado atual do executing
+  putState st {executing = run}           -- estado que recebi em withExec
+  r <- action                             -- trecho rodando
+  st' <- getState                         -- releitura do estado
+  putState st' {executing = currExecVal}  -- restauraçao da flag 
+  return r
+
+-- o que precisa ser feito caso executing == True
+ifExec :: algo -> P algo -> P algo
+ifExec defaultVal action = do
+  exec <- isExec
+  if exec then action else return defaultVal -- se executando faz a acao senao retorna defaultval
+  
+isBool :: SourcePos -> IMValue -> P Bool
+isBool _ (VBool b) = return b 
+isBool pos val = throwError pos ("condicao deve ser booleana, recebeu" ++ showValue val)
+
+-- bloco de stmts ( Stmts )
+runBlock :: Bool -> P ()
+runBlock run = do
+  a <- punc_lparenToken
+  withExec run (do
+    enterScope
+    stmts
+    exitScope
+    )
+  b <- punc_rparenToken
+
+  return ()
+
+-- AÇÕES DE ESCOPOS
+enterScope :: P ()
+enterScope = do
+  st <- getState
+  putState st {scopes = Map.empty : scopes st} -- empilhar escopo !
+
+exitScope :: P ()
+exitScope = do
+  st <- getState 
+  case scopes st of
+    (_:tail) -> putState st {scopes = tail} -- desempilhar escopo descartando o começo (_)
+    []  -> return () -- pilha de escopos vazia
+
 -----------------------------------------------------------------------------
 
 parser :: String -> [Token] -> IO (Either ParseError ())
-parser fn tokens = runParserT defProgram (IMState [Map.empty]) fn tokens
+parser fn tokens = runParserT defProgram (IMState [Map.empty] True) fn tokens
 
 main :: IO ()
 main = do
