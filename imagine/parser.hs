@@ -531,7 +531,7 @@ st =
     return ()
     -- return(a)
 
--- SimpleStmt → DeclStmt | Id StTail | PrintStmt | ListenStmt
+-- SimpleStmt → DeclStmt | Id StTail | PrintStmt | GetStmt
 simpleStmt :: P ()
 simpleStmt = 
   declStmt
@@ -545,7 +545,7 @@ simpleStmt =
     printStmt
   <|>
   do
-    listenStmt
+    getStmt
 
 -- [TO-DO] Block Stmt → CondStmt | WhileStmt | ForStmt
 blockStmt :: P ()
@@ -554,10 +554,11 @@ blockStmt =
   <|>
   whileStmt
   <|>
-  do
-    pos <- getPosition
-    a <- forStmt
-    throwError pos ("ForStmt ainda n implementado")
+  forStmt
+  -- do
+    -- pos <- getPosition
+    -- a <- forStmt
+    -- throwError pos ("ForStmt ainda n implementado")
     -- return(a)
 
 -- [TO-DO] StTail → AttrStmt | '[' Expr ']' StTail' | '(' ListExpr ')' | '.' Id '(' ListExpr ')' | ε
@@ -667,16 +668,23 @@ printStmt =
     d <- punc_rbraceToken
     ifExec () (liftIO (putStrLn (showValue c))) -- so imprime se tiver executing=true
 
--- [TO-DO] ListenStmt → 'get' '{' Var VarList '}'
-listenStmt :: P ()
-listenStmt = do
+-- [TO-DO] GetStmt → 'get' '{' Var VarList '}'
+-- vamos por passos!!! tentar fazer so 1 get primeiro, depos expando pra mais variaveis
+getStmt :: P ()
+getStmt = do
   a <- kw_listenToken
   b <- punc_lbraceToken
+  -- aq
   c <- var
-  d <- varList
+  -- d <- getLine
+  -- print d
+  -- d <- varList
   e <- punc_rbraceToken
   return ()
   -- return ([a]++[b]++c++d++[e])
+
+-- listenIO :: IO -> string
+-- listenIO = return getLine
 
 -- WhileStmt → 'until' '{' Expr '}' 'perform' '(' Stmts ')'
 whileStmt :: P ()
@@ -700,13 +708,37 @@ whileStmt = do
       runBlock (not stop) -- se nao foi atingida, roda o bloco
       if stop then return () else whileLoop startInput startPos -- se foi atingida, sai do loop, se nao foi repete o laço
 
--- [TO-DO] ForStmt → 'for' '{' ForStmt'
+-- [TO-DO] ForStmt → 'for' '{' ForStmt' '}' '(' stmts ')'
+-- uma coisa opr vez: so o for normal !
+-- detalhe: precisamos inserir a nova variavel na tabela obrigatoriamente
 forStmt :: P ()
 forStmt = do
   a <- kw_forToken
-  b <- punc_lbraceToken
-  c <- forStmt'
-  return ()
+  startInput <- getInput  -- dados do começo de {}
+  startPos <- getPosition -- dados do começo de {}
+  forLoop startInput startPos
+  where
+    -- cada forLoop eh uma execucao daqui
+    forLoop startInput startPos = do
+      setInput startInput
+      setPosition startPos
+      b <- punc_lbraceToken  
+      c <- declStmt
+      d <- punc_semicolonToken
+      pos <- getPosition
+      e <- expr
+      f <- punc_commaToken
+      g <- var
+      h <- attrStmt
+      i <- punc_rbraceToken
+
+      exc <- isExec           -- verifica se esta numa parte executavel do codigo
+      stop <- if exc then isBool pos e else return True   -- condiçao foi atingida?
+      runBlock (not stop) -- se nao foi atingida, roda o bloco
+      if stop then return () else forLoop startInput startPos
+
+
+  -- return ()
   -- return ([a,b]++c)
 
 -- [TO-DO] ForStmt' → Id ForDistinguish | DeclStmt ForRegular
