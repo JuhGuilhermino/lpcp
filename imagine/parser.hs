@@ -187,9 +187,9 @@ kw_shoutToken = tokenPrim show update_pos get_token where
   get_token token@(Token _ KW_SHOUT) = Just token
   get_token _ = Nothing
 
-kw_getToken :: P Token
-kw_getToken = tokenPrim show update_pos get_token where
-  get_token token@(Token _ KW_GET) = Just token
+kw_listenToken :: P Token
+kw_listenToken = tokenPrim show update_pos get_token where
+  get_token token@(Token _ KW_LISTEN) = Just token
   get_token _ = Nothing
 
 idToken :: P Token
@@ -531,7 +531,7 @@ st =
     return ()
     -- return(a)
 
--- SimpleStmt → DeclStmt | Id StTail | PrintStmt | GetStmt
+-- SimpleStmt → DeclStmt | Id StTail | PrintStmt | ListenStmt
 simpleStmt :: P ()
 simpleStmt = 
   declStmt
@@ -545,7 +545,7 @@ simpleStmt =
     printStmt
   <|>
   do
-    getStmt
+    listenStmt
 
 -- [TO-DO] Block Stmt → CondStmt | WhileStmt | ForStmt
 blockStmt :: P ()
@@ -667,10 +667,10 @@ printStmt =
     d <- punc_rbraceToken
     ifExec () (liftIO (putStrLn (showValue c))) -- so imprime se tiver executing=true
 
--- [TO-DO] GetStmt → 'get' '{' Var VarList '}'
-getStmt :: P ()
-getStmt = do
-  a <- kw_getToken
+-- [TO-DO] ListenStmt → 'get' '{' Var VarList '}'
+listenStmt :: P ()
+listenStmt = do
+  a <- kw_listenToken
   b <- punc_lbraceToken
   c <- var
   d <- varList

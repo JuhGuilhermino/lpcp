@@ -1,0 +1,23 @@
+main {} (
+
+    int a <- 1;
+
+    if {a < 0} (
+        shout{"yahooo"};
+    )
+    else if {a > 15} (
+        shout{2};
+    )
+    else if {a == 1} (
+        shout{3};
+    )
+
+    endif
+
+    until {a == 15} perform(
+        shout{a};
+        a <- a + 1;
+    )
+
+
+)

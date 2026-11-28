@@ -8,7 +8,7 @@ main{} (
 
     get{a};
 
-    until {a > 0} perform (
+    until {a < 0} perform (
 
         if {a >= 0 && a <= 25} (
             cont1 <- cont1 + 1;
